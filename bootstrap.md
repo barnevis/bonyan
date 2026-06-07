@@ -18,13 +18,13 @@
 
 **core** — نام و نسخه هسته و افزونه‌هایی که هسته مستقیماً به آن‌ها نیاز دارد.
 
-**platform** — پلتفرمی که این پروژه در آن اجرا می‌شود.
+**platform** — پلتفرمی که این پروژه در آن اجرا می‌شود، همراه با مسیر پوشه آن تا هسته بتواند فایل‌های `manifest.json` و `contract.json` آن را بخواند.
 
-**plugins** — فهرست افزونه‌هایی که باید بارگذاری شوند، به ترتیب اولویت بارگذاری.
+**plugins** — فهرست افزونه‌هایی که باید بارگذاری شوند، به ترتیب اولویت بارگذاری. هر افزونه علاوه بر نام و نسخه، باید مسیر پوشه خود را نیز مشخص کند.
 
-**modules** — فهرست ماژول‌هایی که باید بارگذاری شوند.
+**modules** — فهرست ماژول‌هایی که باید بارگذاری شوند. هر ماژول علاوه بر نام و نسخه، باید مسیر پوشه خود را نیز مشخص کند.
 
-**ui** — رابط کاربری این پروژه.
+**ui** — رابط کاربری این پروژه، همراه با مسیر پوشه آن.
 
 **channels** — قوانین دسترسی به گذرگاه‌ها. توسعه‌دهنده بر اساس نیاز و امنیت پروژه تعیین می‌کند چه بخش‌هایی می‌توانند به هر گذرگاه دسترسی داشته باشند.
 
@@ -56,46 +56,55 @@
 
   "platform": {
     "name": "my-company.platform.browser",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "path": "./platform"
   },
 
   "plugins": [
     {
       "name": "my-company.plugin.logger",
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "path": "./plugins/logger"
     },
     {
       "name": "my-company.plugin.indexed-db",
-      "version": "2.1.0"
+      "version": "2.1.0",
+      "path": "./plugins/indexed-db"
     },
     {
       "name": "my-company.plugin.auth",
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "path": "./plugins/auth"
     },
     {
       "name": "my-company.plugin.router",
-      "version": "1.3.0"
+      "version": "1.3.0",
+      "path": "./plugins/router"
     }
   ],
 
   "modules": [
     {
       "name": "my-company.module.task",
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "path": "./modules/task"
     },
     {
       "name": "my-company.module.chat",
-      "version": "1.2.0"
+      "version": "1.2.0",
+      "path": "./modules/chat"
     },
     {
       "name": "my-company.module.notification",
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "path": "./modules/notification"
     }
   ],
 
   "ui": {
     "name": "my-company.ui.web",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "path": "./ui/web"
   },
 
   "config": {
