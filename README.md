@@ -41,21 +41,23 @@
 
 ## اسناد
 
-| سند | توضیح |
-|-----|-------|
-| [architecture.md](architecture.md) | معماری کلی، اصول بنیادین، و قوانین ارتباط میان بخش‌ها |
-| [core.md](core.md) | وظایف و چرخه حیات هسته |
-| [module.md](module.md) | ساختار و قوانین ماژول‌ها |
-| [plugin.md](plugin.md) | ساختار و قوانین افزونه‌ها |
-| [platform.md](platform.md) | ساختار و قوانین پلتفرم |
-| [ui.md](ui.md) | ساختار و قوانین رابط کاربری |
-| [contract.md](contract.md) | فرمت و قوانین قرارداد |
-| [manifest.md](manifest.md) | فرمت و قوانین مانیفست |
-| [bootstrap.md](bootstrap.md) | پیکربندی راه‌اندازی |
-| [naming.md](naming.md) | قراردادهای نام‌گذاری |
-| [versioning.md](versioning.md) | قوانین نسخه‌بندی |
-| [error.md](error.md) | مدیریت خطا |
-| [security.md](security.md) | اصول امنیتی |
+اسناد به دو زبان فارسی و انگلیسی در دسترس هستند:
+
+| سند | فارسی | English |
+|-----|-------|---------|
+| معماری کلی | [architecture.md](docs/fa/architecture.md) | [architecture.md](docs/en/architecture.md) |
+| هسته | [core.md](docs/fa/core.md) | [core.md](docs/en/core.md) |
+| ماژول | [module.md](docs/fa/module.md) | [module.md](docs/en/module.md) |
+| افزونه | [plugin.md](docs/fa/plugin.md) | [plugin.md](docs/en/plugin.md) |
+| پلتفرم | [platform.md](docs/fa/platform.md) | [platform.md](docs/en/platform.md) |
+| رابط کاربری | [ui.md](docs/fa/ui.md) | [ui.md](docs/en/ui.md) |
+| قرارداد | [contract.md](docs/fa/contract.md) | [contract.md](docs/en/contract.md) |
+| مانیفست | [manifest.md](docs/fa/manifest.md) | [manifest.md](docs/en/manifest.md) |
+| پیکربندی راه‌اندازی | [bootstrap.md](docs/fa/bootstrap.md) | [bootstrap.md](docs/en/bootstrap.md) |
+| نام‌گذاری | [naming.md](docs/fa/naming.md) | [naming.md](docs/en/naming.md) |
+| نسخه‌بندی | [versioning.md](docs/fa/versioning.md) | [versioning.md](docs/en/versioning.md) |
+| مدیریت خطا | [error.md](docs/fa/error.md) | [error.md](docs/en/error.md) |
+| امنیت | [security.md](docs/fa/security.md) | [security.md](docs/en/security.md) |
 
 ## اصول کلیدی
 
@@ -71,10 +73,10 @@
 
 برای شروع پیشنهاد می‌شود این اسناد را به ترتیب بخوانید:
 
-1. [architecture.md](architecture.md) — درک کلی معماری
-2. [manifest.md](manifest.md) و [contract.md](contract.md) — درک قراردادها
-3. [bootstrap.md](bootstrap.md) — درک نحوه راه‌اندازی
-4. [core.md](core.md) — شروع پیاده‌سازی از هسته
+1. [architecture.md](docs/fa/architecture.md) — درک کلی معماری
+2. [manifest.md](docs/fa/manifest.md) و [contract.md](docs/fa/contract.md) — درک قراردادها
+3. [bootstrap.md](docs/fa/bootstrap.md) — درک نحوه راه‌اندازی
+4. [core.md](docs/fa/core.md) — شروع پیاده‌سازی از هسته
 
 ## مشارکت
 
