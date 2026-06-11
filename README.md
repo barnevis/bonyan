@@ -3,7 +3,7 @@
 بنیان یک معماری ماژولار و چندسکویی برای توسعه محصولات نرم‌افزاری مبتنی بر JavaScript، HTML و CSS است. این معماری بدون وابستگی به چارچوب‌های سنگین طراحی شده و هدف اصلی آن ساده‌سازی توسعه توسط انسان و مدل‌های هوش مصنوعی است.
 
 [![هوش‌مصنوعی](https://img.shields.io/badge/Built%20with-AI-blueviolet)](#)
-[![نسخه](https://img.shields.io/badge/version-0.1-blue.svg)](package.json)
+[![نسخه](https://img.shields.io/badge/version-0.3-blue.svg)](package.json)
 [![مجوز](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > این معماری با کمک مدل‌های هوش مصنوعی Claude Sonnet 4.6 و GLM 5.1 نوشته شده است.
