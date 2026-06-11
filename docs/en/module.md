@@ -47,7 +47,7 @@ Modules must not:
 ### Communication with Other Parts
 
 * Modules cannot directly depend on the internal implementation of another module.
-* Modules communicate with each other and other parts exclusively through the event bus.
+* Modules communicate with each other and other parts exclusively through the channel.
 * Modules can use plugins, but not the internal logic of other modules.
 * All communication must be conducted through explicit contracts.
 
@@ -55,7 +55,7 @@ Modules must not:
 
 * Each module is the exclusive owner of its own data.
 * No part can directly modify a module's data.
-* Requests for data and requests for data modification must be made via the bus.
+* Requests for data and requests for data modification must be made via the channel.
 
 ### Logic and Responsibility
 
@@ -66,7 +66,7 @@ Modules must not:
 ### Error Isolation
 
 * An error in a module must not propagate to the rest of the system.
-* A module must contain its internal errors and notify the system via the event bus.
+* A module must contain its internal errors and notify the system via the channel.
 
 ## Module Lifecycle
 

@@ -47,15 +47,15 @@ After reading the manifest, the Core checks dependencies and compatibility. If a
 
 Some plugins only work on specific platforms. The plugin declares this limitation through required dependencies in its manifest. Before initializing the plugin, the Core verifies that the required platform has been loaded.
 
-### Relationship with the Event Bus
+### Relationship with the Channel
 
-A plugin can interact with the event bus in three ways:
+A plugin can interact with the channel in three ways:
 
-**Listening to the System Bus** — The plugin can listen to general system messages.
+**Listening to the System Channel** — The plugin can listen to general system messages.
 
-**Having a Private Bus** — Each plugin can have its own private bus. This bus is strictly for the plugin's internal communications, and no other part can access it directly.
+**Having a Private Channel** — Each plugin can have its own private channel. This channel is strictly for the plugin's internal communications, and no other part can access it directly.
 
-**Publishing Messages on the System Bus** — The plugin can publish messages on the system bus. The access of other parts to the plugin's private bus is defined through the `channels` section in `bootstrap.json`.
+**Publishing Messages on the System Channel** — The plugin can publish messages on the system channel. The access of other parts to the plugin's private channel is defined through the `channels` section in `bootstrap.json`.
 
 ### Core Guarantees
 
@@ -71,7 +71,7 @@ The Core provides registered plugins with three guarantees:
 
 * Plugins must not depend on modules.
 * Plugins must not depend on each other except through an explicit contract.
-* All communication must be conducted through the bus.
+* All communication must be conducted through the channel.
 
 ### Logic and Responsibility
 
@@ -84,7 +84,7 @@ The Core provides registered plugins with three guarantees:
 
 * Each plugin must be replaceable without affecting other plugins.
 * An error in a plugin must not propagate to modules that do not use it.
-* The plugin must contain its internal errors and notify the system by publishing a message on the bus.
+* The plugin must contain its internal errors and notify the system by publishing a message on the channel.
 
 ## Plugin Lifecycle
 
@@ -104,7 +104,7 @@ Plugins are initialized before modules and stopped after modules.
 
 ### Stopping
 
-1. Unsubscribing from event buses
+1. Unsubscribing from channels
 2. Completing ongoing operations
 3. Releasing resources
 4. Removing from the Core's registry

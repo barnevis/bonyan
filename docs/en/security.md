@@ -38,13 +38,13 @@ The Core is the first and most important line of defense:
 * It must control part access to the channels — no part can access a channel that is not defined in the configuration.
 * It must log any attempt at unauthorized access to a channel.
 
-### Layer Two — Event Bus Security
+### Layer Two — Channel Security
 
 Channels are the only way to communicate and transfer data between parts:
 * Small data can be transferred directly in the message.
 * Large data must be kept in a temporary storage plugin, and only its identifier (ID) should be transferred in the message.
-* Sensitive data like passwords, tokens, or personal information must not be published via the system bus.
-* Messages containing sensitive data must use a private bus.
+* Sensitive data like passwords, tokens, or personal information must not be published via the system channel.
+* Messages containing sensitive data must use a private channel.
 
 ### Layer Three — Boundary Security
 

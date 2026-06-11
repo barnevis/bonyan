@@ -76,19 +76,19 @@ my-company.contract.auth
 
 Because internal elements exist within the scope of a specific part, they do not require the vendor name.
 
-### Event Bus
+### Channel
 
-Buses follow the `name.bus` format:
+Channels follow the `name.channel` format:
 
 ```text
-system.bus       ← The system bus, shared among all parts
-task.bus         ← The private bus of the task module
-indexed-db.bus   ← The private bus of the indexed-db plugin
+system.channel       ← The system channel, shared among all parts
+task.channel         ← The private channel of the task module
+indexed-db.channel   ← The private channel of the indexed-db plugin
 ```
 
 ### Messages
 
-At the bus level, everything is a message. The architecture does not technically distinguish between an event, request, command, or response. The meaning of a message is defined by its name and contract.
+At the channel level, everything is a message. The architecture does not technically distinguish between an event, request, command, or response. The meaning of a message is defined by its name and contract.
 
 Messages follow the `name:verb` format:
 
@@ -144,7 +144,7 @@ task.delete
 
 ### Core Messages
 
-Messages that the Core publishes on the system bus follow the `core:verb` format:
+Messages that the Core publishes on the system channel follow the `core:verb` format:
 
 ```text
 core:ready          ← The system is ready

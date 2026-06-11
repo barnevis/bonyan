@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The User Interface (UI) is the presentation layer of the product. The UI's responsibility is to display data, capture user interaction, collect user-inputted data, and transmit them to the system via the event bus.
+The User Interface (UI) is the presentation layer of the product. The UI's responsibility is to display data, capture user interaction, collect user-inputted data, and transmit them to the system via the channel.
 
 The UI is the final layer of the architecture. All decisions, rules, and product logic must have been made before reaching the UI. The UI merely displays the result.
 
@@ -10,19 +10,19 @@ The UI is the final layer of the architecture. All decisions, rules, and product
 
 The UI is responsible for four things:
 
-**Data Presentation** — Displays data received via the bus in a comprehensible format for the user. The UI does not interpret the data; it only displays it.
+**Data Presentation** — Displays data received via the channel in a comprehensible format for the user. The UI does not interpret the data; it only displays it.
 
-**Capturing User Interaction** — Captures user inputs such as clicks and navigation, and publishes them as messages on the bus.
+**Capturing User Interaction** — Captures user inputs such as clicks and navigation, and publishes them as messages on the channel.
 
-**Collecting User Data** — Collects data entered by the user, such as forms and text inputs, and transmits them to the system via the bus.
+**Collecting User Data** — Collects data entered by the user, such as forms and text inputs, and transmits them to the system via the channel.
 
-**Sending Messages** — All user interactions and data are transmitted to the system as messages via the bus. The UI does not know which part processes this message.
+**Sending Messages** — All user interactions and data are transmitted to the system as messages via the channel. The UI does not know which part processes this message.
 
 ## Structure of a UI
 
 Each UI consists of three parts:
 
-**Manifest** — The file that defines the identity, version, architectural compatibility, implemented contract, corresponding platform, required configuration, and the need for a private bus. The Core recognizes and loads the UI based on the manifest.
+**Manifest** — The file that defines the identity, version, architectural compatibility, implemented contract, corresponding platform, required configuration, and the need for a private channel. The Core recognizes and loads the UI based on the manifest.
 
 **Contract** — The formal agreement specifying what messages this UI publishes, what messages it receives, and which channels it has access to.
 
@@ -37,28 +37,28 @@ The UI is initialized
        ↓
 The UI publishes the ui:ready message
        ↓
-Relevant modules send initial data via the bus
+Relevant modules send initial data via the channel
        ↓
 The UI receives and displays the data
        ↓
 The user interacts
        ↓
-The UI publishes a message on the bus
+The UI publishes a message on the channel
        ↓
 The relevant module receives and processes the message
 ```
 
 ### Relationship with Modules
 
-* The UI receives data exclusively through the bus.
+* The UI receives data exclusively through the channel.
 * The UI cannot directly call a module's internal logic.
 * The UI cannot directly modify a module's data.
 
-### Relationship with the Event Bus
+### Relationship with the Channel
 
-* All UI communication is conducted through the bus.
-* The bus type — public or private — is defined in `bootstrap.json`.
-* Sensitive data such as passwords or banking information must not be published on the public bus.
+* All UI communication is conducted through the channel.
+* The channel type — public or private — is defined in `bootstrap.json`.
+* Sensitive data such as passwords or banking information must not be published on the public channel.
 * The UI does not know which part receives its messages.
 
 ### Relationship with Plugins
@@ -80,7 +80,7 @@ The relevant module receives and processes the message
 
 * The UI must be replaceable without altering the modules.
 * Changes in the UI's appearance or technology must not harm the product's logic.
-* The UI must not hold the state of product data; data is always received via the bus.
+* The UI must not hold the state of product data; data is always received via the channel.
 
 ### User Interaction
 
@@ -101,17 +101,17 @@ The UI is the last part to be initialized and the first part to be stopped.
 3. Checking compatibility with the current platform
 4. Loading configuration from the Core
 5. Validating the contract implementation
-6. Creating the bus based on the definition in `bootstrap.json`
-7. Subscribing to required messages on the buses
+6. Creating the channel based on the definition in `bootstrap.json`
+7. Subscribing to required messages on the channels
 8. Publishing the `ui:ready` message
-9. Receiving initial data via the bus
+9. Receiving initial data via the channel
 10. Preparing the initial display
 11. The UI is ready
 
 ### Stopping
 
 1. The Core issues the command to stop the UI
-2. The UI unsubscribes from messages on the buses
+2. The UI unsubscribes from messages on the channels
 3. The UI releases resources
 
 ## What a UI is Not

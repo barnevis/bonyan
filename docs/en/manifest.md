@@ -26,7 +26,7 @@ Each manifest consists of six sections:
 
 **config** — The configurations this part needs for initialization, along with default values.
 
-**bus** — Declaration of the need for a private bus. This field is optional and is defined only if the part requires a private bus.
+**channel** — Declaration of the need for a private channel. This field is optional and is defined only if the part requires a private channel.
 
 ## Manifest Validation
 
@@ -101,7 +101,7 @@ If any of these checks fail, the part is not loaded, and the Core reports a clea
       "default": 50
     }
   ],
-  "bus": {
+  "channel": {
     "private": false
   }
 }
@@ -151,7 +151,7 @@ If any of these checks fail, the part is not loaded, and the Core reports a clea
       "default": 1000
     }
   ],
-  "bus": {
+  "channel": {
     "private": false
   }
 }
@@ -235,7 +235,7 @@ If any of these checks fail, the part is not loaded, and the Core reports a clea
       "default": "fa"
     }
   ],
-  "bus": {
+  "channel": {
     "private": true
   }
 }

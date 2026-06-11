@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The bootstrap configuration is the single source of truth from which the Core understands what parts a project consists of and how access to buses is configured. Without this file, the Core does not know which plugins, modules, platforms, and user interfaces must be loaded.
+The bootstrap configuration is the single source of truth from which the Core understands what parts a project consists of and how access to channels is configured. Without this file, the Core does not know which plugins, modules, platforms, and user interfaces must be loaded.
 
 Every project has one bootstrap configuration file. This file is the first thing the Core reads upon execution.
 
@@ -26,14 +26,14 @@ The bootstrap configuration consists of eight sections:
 
 **ui** — The user interface of this project, along with its folder path.
 
-**channels** — Bus access rules. The developer determines which parts can access each bus based on the project's needs and security.
+**channels** — Channel access rules. The developer determines which parts can access each channel based on the project's needs and security.
 
-Each bus can be defined with one of two policies:
+Each channel can be defined with one of two policies:
 
-* **allow** — Only the named parts can access this bus. Other parts do not have access.
-* **deny** — All parts can access this bus except the named parts. If `deny` is empty, all parts have access.
+* **allow** — Only the named parts can access this channel. Other parts do not have access.
+* **deny** — All parts can access this channel except the named parts. If `deny` is empty, all parts have access.
 
-**Default Policy:** If a bus is not defined in the `channels` section, access to it is **closed** — no external part can access it. The developer must explicitly define any bus requiring external access in `channels`.
+**Default Policy:** If a channel is not defined in the `channels` section, access to it is **closed** — no external part can access it. The developer must explicitly define any channel requiring external access in `channels`.
 
 **config** — Configuration values for all parts that override the manifest's default values.
 
@@ -121,16 +121,16 @@ Each bus can be defined with one of two policies:
   },
 
   "channels": {
-    "system.bus": {
+    "system.channel": {
       "deny": []
     },
-    "my-company.ui.web.bus": {
+    "my-company.ui.web.channel": {
       "allow": [
         "my-company.module.task",
         "my-company.module.notification"
       ]
     },
-    "my-company.module.task.bus": {
+    "my-company.module.task.channel": {
       "deny": [
         "my-company.ui.mobile"
       ]
@@ -157,8 +157,8 @@ After reading the configuration file, the Core performs the following steps in o
 12. Checking dependencies of each module (absence of an optional dependency is not an error)
 13. Identifying the user interface defined in `bootstrap.json`
 14. Validating the manifest and contract of the user interface
-15. Creating the buses defined in the `channels` section; if a part requested a private bus in its manifest but it is not defined in `channels`, the Core creates it with default access
-16. Setting bus access rules based on the `channels` section
+15. Creating the channels defined in the `channels` section; if a part requested a private channel in its manifest but it is not defined in `channels`, the Core creates it with default access
+16. Setting channel access rules based on the `channels` section
 17. Initializing the user interface
 18. The system is ready
 
@@ -207,4 +207,4 @@ The Core reads these values from the execution environment at startup and replac
 * The `config` values in this file override the manifest's default values.
 * Configuration does not change after system startup.
 * Optional dependencies are checked at startup, but their absence is not an error.
-* The `channels` section only specifies access rules for parts and buses; routing or interpreting messages is not the Core's responsibility.
+* The `channels` section only specifies access rules for parts and channels; routing or interpreting messages is not the Core's responsibility.

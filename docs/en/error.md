@@ -14,7 +14,7 @@ Errors in this architecture are divided into three categories:
 
 **Operational Error** — An error that occurs during the execution of an operation. Examples include a method failure, a dropped connection, or invalid data. This error must be contained within the part's own boundary.
 
-**Critical Error** — An error that completely disables a part. The Core removes this part from the registry, sends a notification via the system bus, and the system continues to operate with degraded capabilities.
+**Critical Error** — An error that completely disables a part. The Core removes this part from the registry, sends a notification via the system channel, and the system continues to operate with degraded capabilities.
 
 ## Error Structure
 
@@ -48,18 +48,18 @@ Every error in this architecture must contain this information:
 ### Responsibility of Each Part
 
 * Each part manages and logs its own internal errors and never publishes raw errors outside its boundary.
-* Critical errors that cause a part to crash must be reported via the system bus.
+* Critical errors that cause a part to crash must be reported via the system channel.
 * No part should ignore (swallow) an error.
 
 ### Core's Responsibility
 
 * The Core only logs errors related to the startup, loading, and validation of parts.
-* The Core notifies the system about critical errors via the system bus.
+* The Core notifies the system about critical errors via the system channel.
 * At runtime, the Core never halts the entire system due to an error in a non-foundational part.
 
 ### Error Notification
 
-When a part encounters a critical error, the Core publishes this message on the system bus:
+When a part encounters a critical error, the Core publishes this message on the system channel:
 
 ```json
 {

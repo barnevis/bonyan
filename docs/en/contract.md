@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A contract is a formal agreement specifying what operations a part has implemented, what messages it accepts, what messages it publishes, and which channel it uses. The operations of a part are not directly accessible and can only be interacted with through the event bus. The contract is the common language among the Core, plugins, modules, the platform, and the user interface.
+A contract is a formal agreement specifying what operations a part has implemented, what messages it accepts, what messages it publishes, and which channel it uses. The operations of a part are not directly accessible and can only be interacted with through the channel. The contract is the common language among the Core, plugins, modules, the platform, and the user interface.
 
 A contract is different from a manifest. A manifest specifies who a part is and what it needs. A contract specifies what a part provides and how it communicates.
 
@@ -20,7 +20,7 @@ Each contract consists of four sections:
 
 **Methods (`methods`)** — The list of operations implemented by this part. Each operation specifies what this part can do, what parameters it accepts, what output it returns, and what errors might occur. Contract methods are not a direct API, and no other part is allowed to call them directly. They are used to describe the part's capabilities, validate the implementation, write tests, and guide humans and AI models. Triggering or using these operations is only possible through the messages defined in the contract.
 
-**Messages (`messages`)** — The list of messages this part publishes or accepts. Each message must have a specific type, description, data structure, and emission or reception time. At the bus level, the architecture does not technically distinguish between events, requests, commands, or responses; all of them are messages, and the meaning of each message is defined by its `type` and contract.
+**Messages (`messages`)** — The list of messages this part publishes or accepts. Each message must have a specific type, description, data structure, and emission or reception time. At the channel level, the architecture does not technically distinguish between events, requests, commands, or responses; all of them are messages, and the meaning of each message is defined by its `type` and contract.
 
 **Suggested Channel (`suggestedChannel`)** — The identifier of the channel suggested for use with this part's messages.
 
@@ -105,7 +105,7 @@ If structure validation fails, the part is not loaded. If implementation validat
       "when": "When an error occurs"
     }
   ],
-  "suggestedChannel": "system.bus"
+  "suggestedChannel": "system.channel"
 }
 ```
 
@@ -184,13 +184,13 @@ If structure validation fails, the part is not loaded. If implementation validat
       "when": "After successful deletion"
     }
   ],
-  "suggestedChannel": "task.bus"
+  "suggestedChannel": "task.channel"
 }
 ```
 
 ## Basic Message Structure
 
-Every message must have a `type`. A message may also include `data` and `correlationId`. Technical fields such as `id`, `source`, and `timestamp` are completed by the bus or the Core.
+Every message must have a `type`. A message may also include `data` and `correlationId`. Technical fields such as `id`, `source`, and `timestamp` are completed by the channel or the Core.
 
 ```json
 {
