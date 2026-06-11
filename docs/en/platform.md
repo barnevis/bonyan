@@ -2,132 +2,132 @@
 
 ## Introduction
 
-The platform is the bridge between the product and the runtime environment. The platform's responsibility is to provide unified access to runtime environment capabilities so that the rest of the system does not need to know the details of the runtime environment.
+The platform is the bridge between the product and the execution environment. The platform's responsibility is to provide unified access to the execution environment's capabilities, so that the rest of the system's parts do not need to know the details of the execution environment.
 
-The platform is not part of the product's logic. The platform is only an adaptation layer that allows the same product to run in different environments.
+The platform is not part of the product's logic. The platform is merely an adaptation layer that allows the same product to run in different environments.
 
 ## Platform Responsibilities
 
 The platform is responsible for three things:
 
-**Runtime environment capability access** — Every runtime environment has its own specific capabilities. The platform makes these capabilities available to the rest of the system through unified interfaces — such as access to the filesystem, camera, system notifications, or local storage.
+**Access to Execution Environment Capabilities** — Every execution environment has its own specific capabilities. The platform exposes these capabilities to the rest of the system through unified interfaces. Examples include access to the file system, camera, system notifications, or local storage.
 
-**Application lifecycle management** — Every runtime environment has a different lifecycle. The platform passes this lifecycle to the core so the core can properly manage system startup and shutdown — such as the app opening, going to the background, or closing.
+**Application Lifecycle Management** — Every execution environment has a different lifecycle. The platform relays this lifecycle to the Core so the Core can properly manage the startup and shutdown of the system. Examples include the application opening, going to the background, or closing.
 
-**Adapting to runtime environment constraints** — Every runtime environment has its own specific constraints. The platform hides these constraints from the rest of the system and provides compatible solutions.
+**Adapting to Environment Limitations** — Every execution environment has its own constraints. The platform hides these limitations from the rest of the system and provides compatible solutions.
 
-## Platform Types
+## Types of Platforms
 
 ### Browser
 
-A web-based runtime environment that runs in different browsers.
+A web-based execution environment that runs in various browsers.
 
-Main capabilities:
+Core Capabilities:
 * Local storage
 * Server communication
-* Camera and microphone access with user permission
+* Access to camera and microphone with user permission
 
-Main constraints:
-* Limited filesystem access
+Core Limitations:
+* Limited file system access
 * Dependency on network connection
-* Browser security restrictions
+* Browser security constraints
 
 ### Mobile
 
-A runtime environment based on mobile devices.
+An execution environment based on mobile devices.
 
-Main capabilities:
-* Sensor access
+Core Capabilities:
+* Access to sensors
 * System notifications
-* Contacts and calendar access with user permission
+* Access to contacts and calendar with user permission
 * Background execution
 
-Main constraints:
+Core Limitations:
 * More limited resources compared to desktop
 * Lifecycle management by the operating system
-* Background resource access restrictions
+* Constraints on background resource access
 
 ### Desktop
 
-A runtime environment based on personal computers.
+An execution environment based on personal computers.
 
-Main capabilities:
-* Full filesystem access
+Core Capabilities:
+* Full file system access
 * Parallel process execution
 * Operating system integration
 
-Main constraints:
-* Differences between operating systems
+Core Limitations:
+* Differences between various operating systems
 
-## Platform Structure
+## Structure of a Platform
 
-Every platform consists of three parts:
+Each platform consists of three parts:
 
-**Manifest** — A file that defines the platform's identity, version, architecture compatibility, implemented contract, required configuration, and platform events. The core reads the manifest to recognize and load the platform.
+**Manifest** — The file that defines the platform's identity, version, architectural compatibility, implemented contract, required configuration, and events. The Core recognizes and loads the platform based on the manifest.
 
-**Contract** — A formal agreement that specifies what unified interfaces this platform provides. The platform interface must be the same across all runtime environments.
+**Contract** — The formal agreement specifying what operations this platform has implemented, what messages it accepts, what messages it publishes, and what execution environment capabilities it provides.
 
-**Internal implementation** — The details of how runtime environment capabilities are accessed, which is completely private.
+**Internal Implementation** — The details of accessing the execution environment's capabilities, which is completely private.
 
-## Platform Relationship with the Core
+## Platform's Relationship with the Core
 
-The core is the first part to run. The core loads the platform defined in `bootstrap.json`.
+The Core is the first part to execute. The Core loads the platform defined in `bootstrap.json`.
 
 ### Loading by the Core
 
-After loading the platform, the core receives the following information from it:
+After loading the platform, the Core receives the following information from it:
 
-* Runtime environment type
+* Type of execution environment
 * Available capabilities
-* Runtime environment constraints
+* Execution environment limitations
 
-The core uses this information to decide which plugins to load. Plugins that depend on the current runtime environment are only loaded if they are compatible.
+The Core uses this information to make decisions about loading plugins. Plugins dependent on the current execution environment are only loaded if they are compatible.
 
 ### Unified Interface
 
-The platform makes runtime environment capabilities available to the core and plugins through unified interfaces. These interfaces are the same across all platforms even if each platform's internal implementation differs.
+The platform provides the execution environment's capabilities to the Core and plugins through unified interfaces. These interfaces are identical across all platforms, even if the internal implementation of each platform differs.
 
 ## Platform Rules
 
-### Runtime Environment Access
+### Access to the Execution Environment
 
-* No part other than the platform can interact directly with the runtime environment
-* All access to runtime environment capabilities must go through the platform's interfaces
-* The platform must transparently declare capabilities that are not available
+* No part other than the platform can interact directly with the execution environment.
+* All access to the execution environment's capabilities must be conducted through the platform's interfaces.
+* The platform must transparently declare capabilities that are unavailable.
 
 ### Logic and Responsibility
 
-* The platform must not contain product logic
-* The platform must not depend on modules
-* The platform must not listen to module events
-* The platform interface must be the same across all runtime environments
+* The platform must not contain product logic.
+* The platform must not depend on modules.
+* The platform must not listen to module events.
+* The platform's interface must be identical across all execution environments.
 
 ### Isolation
 
-* Differences between runtime environments must be fully contained inside the platform
-* Changing or replacing a platform must not require changes to modules or plugins
+* Differences between execution environments must be completely contained within the platform.
+* Changing or replacing a platform must not require modifications to modules or plugins.
 
 ## Platform Lifecycle
 
-### Startup
+### Initialization
 
-1. Read the manifest
-2. Check architecture version compatibility
-3. Load configuration from the core
-4. Check contract implementation
-5. Check available capabilities in the runtime environment
-6. Prepare unified interfaces
-7. Deliver runtime environment information to the core
-8. Platform is ready
+1. Reading the manifest
+2. Checking architecture version compatibility
+3. Loading configuration from the Core
+4. Validating the contract implementation
+5. Checking available capabilities in the execution environment
+6. Preparing unified interfaces
+7. Delivering execution environment information to the Core
+8. The platform is ready
 
-### Shutdown
+### Stopping
 
-1. The core issues the shutdown command
-2. The platform completes operations in progress
+1. The Core issues the stop command
+2. The platform completes ongoing operations
 3. The platform releases resources
 
-## What a Platform Is Not
+## What a Platform is Not
 
-* A platform is not responsible for product logic — that is the module's job
-* A platform is not responsible for infrastructure — that is the plugin's job
-* A platform is not responsible for displaying data — that is the UI's job
+* The platform is not responsible for product logic; this is the module's responsibility.
+* The platform is not responsible for infrastructure; this is the plugin's responsibility.
+* The platform is not responsible for data presentation; this is the UI's responsibility.

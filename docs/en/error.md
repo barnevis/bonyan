@@ -2,23 +2,23 @@
 
 ## Introduction
 
-Error management in this architecture is a contract, not an implementation. Every part must report errors in a specific and predictable way so the core can contain and manage them.
+Error management in this architecture is a contract, not an implementation. Each part must report errors in a specific and predictable manner so that the Core can contain and manage them.
 
-The primary goal is that an error in one part neither stops the system nor gets lost in it.
+The primary goal is that an error in a single part neither crashes the system nor gets lost within it.
 
-## Error Types
+## Types of Errors
 
 Errors in this architecture are divided into three categories:
 
-**Startup error** — An error that occurs while loading or starting a part. Examples include a missing dependency, version incompatibility, or incomplete configuration. This error prevents that part from loading but the system continues operating.
+**Startup Error** — An error that occurs during the loading or initialization of a part. Examples include missing dependencies, version incompatibility, or incomplete configuration. This error prevents that specific part from loading, but the system continues to operate.
 
-**Operational error** — An error that occurs while executing an operation. Examples include a failed method, a dropped connection, or invalid data. This error must be contained at the part's own boundary.
+**Operational Error** — An error that occurs during the execution of an operation. Examples include a method failure, a dropped connection, or invalid data. This error must be contained within the part's own boundary.
 
-**Critical error** — An error that takes a part completely out of operation. The core removes this part from the registry, notifies via the system bus, and the system continues operating with reduced capability.
+**Critical Error** — An error that completely disables a part. The Core removes this part from the registry, sends a notification via the system bus, and the system continues to operate with degraded capabilities.
 
 ## Error Structure
 
-Every error in this architecture must contain the following information:
+Every error in this architecture must contain this information:
 
 ```json
 {
@@ -28,38 +28,38 @@ Every error in this architecture must contain the following information:
     "method": "create"
   },
   "code": "TASK_LIMIT_EXCEEDED",
-  "message": "The number of tasks exceeds the allowed limit",
+  "message": "Task limit exceeded",
   "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
-**type** — The error type: `startup`, `operational`, or `critical`
+**type** — The type of error: `startup`, `operational`, or `critical`.
 
-**source** — The error source including the part name and the method where the error occurred
+**source** — The source of the error, including the part name and the method where the error occurred.
 
-**code** — A unique error code used for tracking and programmatic handling
+**code** — A unique error code used for tracking and programmatic management.
 
-**message** — A human-readable message
+**message** — A human-readable message.
 
-**timestamp** — The exact time the error occurred
+**timestamp** — The exact time the error occurred.
 
 ## Error Management Rules
 
-### Each Part's Responsibility
+### Responsibility of Each Part
 
-* Every part manages and logs its own internal errors and never exposes a raw error outside its own boundary
-* Critical errors that take a part out of operation must be announced via the system bus
-* No part may ignore an error
+* Each part manages and logs its own internal errors and never publishes raw errors outside its boundary.
+* Critical errors that cause a part to crash must be reported via the system bus.
+* No part should ignore (swallow) an error.
 
 ### Core's Responsibility
 
-* The core only logs errors related to startup, loading, and validation of parts
-* The core announces critical errors via the system bus
-* The core never stops the entire system because of one part's error
+* The Core only logs errors related to the startup, loading, and validation of parts.
+* The Core notifies the system about critical errors via the system bus.
+* The Core never halts the entire system due to an error in a single part.
 
 ### Error Notification
 
-When a part encounters a critical error, the core publishes this event on the system bus:
+When a part encounters a critical error, the Core publishes this event on the system bus:
 
 ```json
 {
@@ -69,10 +69,10 @@ When a part encounters a critical error, the core publishes this event on the sy
 }
 ```
 
-The UI and other interested parts can listen to this event and respond appropriately.
+The UI and other interested parts can listen to this event and react appropriately.
 
-## What Error Management Is Not
+## What Error Management is Not
 
-* Error management does not mean hiding errors
-* Error management does not mean infinite retries — retry logic must be defined inside the part itself
-* Error management is not a substitute for testability
+* Error management does not mean hiding errors.
+* Error management does not mean infinite retries; retry logic must be defined within the part itself.
+* Error management is not a substitute for testability.

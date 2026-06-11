@@ -2,87 +2,75 @@
 
 ## Introduction
 
-Security in this architecture is not a separate layer — it is a principle that runs through every part. Each part is responsible for the security of its own boundary and the core coordinates the security of the entire system.
+Security in this architecture is not a separate layer, but a principle that flows through all parts. Each part is responsible for the security of its own boundary, and the Core coordinates the security of the entire system.
 
-The security goals of this architecture are three:
+The goal of security in this architecture is threefold:
 * Prevent unauthorized access between parts
-* Prevent sensitive data from leaking
+* Prevent the leakage of sensitive data
 * Limit the impact of a compromised part on the rest of the system
 
 ## Security Principles
 
 ### Least Privilege
 
-Every part must only have access to what it needs to perform its function — nothing more. This principle is enforced through the manifest. Anything not declared in a part's manifest is not accessible.
+Each part must only have access to what it needs to perform its duty. Nothing more. This principle is enforced through the manifest. Anything not declared in a part's manifest is unavailable.
 
 ### Zero Trust
 
-No part must trust input from another part without validation — even if the sender is an internal part of the system.
+No part should trust the input of another part without validation. Even if the sender is an internal part of the system.
 
-### Blast Radius Containment
+### Impact Containment
 
-If a part is compromised or behaves abnormally, its impact must remain contained to that part. The core's isolation mechanisms guarantee this principle.
+If a part is compromised or exhibits abnormal behavior, its impact must remain confined to that part. The Core's isolation mechanisms guarantee this principle.
 
 ### Transparency
 
-Every security action — rejecting a request, filtering an event, or blocking access — must be logged. Hidden security is not trustworthy security.
+Every security action — rejecting a request, filtering an event, or blocking access — must be logged. Hidden security is not reliable security.
 
 ## Security Layers
 
 ### Layer One — Core Security
 
-The core is the first and most important line of defense:
+The Core is the first and most important line of defense:
+* It must only load parts whose manifest and contract are valid.
+* It must not register any part without full validation.
+* It must create channels strictly based on the project configuration.
+* It must control part access to the channels — no part can access a channel that is not defined in the configuration.
+* It must log any attempt at unauthorized access to a channel.
 
-* Only load parts whose manifest and contract are valid
-* Never register a part in the registry without complete validation
-* Control access to the registry — every access request is checked against the dependencies declared in the manifest
-* Log every rejected access request with the requester's name and the requested service
+### Layer Two — Event Bus Security
 
-### Layer Two — Registry Security
+Channels are the only way to communicate and transfer data between parts:
+* Small data can be transferred directly in the message.
+* Large data must be kept in a temporary storage plugin, and only its identifier (ID) should be transferred in the message.
+* Sensitive data like passwords, tokens, or personal information must not be published via the system bus.
+* Messages containing sensitive data must use a private bus.
 
-The registry does not give all parts free access:
-
-```text
-All parts  ←  can only access parts they have declared in their manifest
-```
-
-If a part requests access to a service it has not declared in its manifest, the core rejects the request and logs the incident.
-
-### Layer Three — Event Bus Security
-
-The event bus is a communication channel that can carry data:
-
-* Small data can be transferred directly in the message
-* Large data must be stored in a temporary storage plugin and only its identifier passed in the message
-* Sensitive data such as passwords, tokens, or personal information must not be published on the system bus
-* Messages containing sensitive data must use a private channel
-
-### Layer Four — Boundary Security
+### Layer Three — Boundary Security
 
 Each part is responsible for the security of its own boundary:
+* Received inputs must be validated before processing.
+* No part should trust raw external data.
+* Outbound outputs must not leak internal system information or raw error details.
 
-* Received inputs must be validated before processing
-* No part must trust raw external data
-* Sent outputs must not expose internal system information or raw error details
+### Layer Four — Configuration Security
 
-### Layer Five — Configuration Security
-
-* Sensitive keys such as API keys, database passwords, and service tokens must not be stored as plain text in `bootstrap.json`
-* These values must be supplied through environment variables or a secret management service
-* No part must log sensitive keys
+* Sensitive keys like API keys, database passwords, and service tokens must not be stored as plain text in `bootstrap.json`.
+* These values must be provided via environment variables or a secret management service.
+* No part should log sensitive keys.
 
 ## Security Responsibilities
 
 ```text
-Core              ← registry access control, manifest and contract validation
-Auth plugin       ← identity and token management
-Modules           ← input validation, business logic protection
-Platform          ← runtime environment security
-UI                ← preventing display of sensitive data
+Core                  ← Controlling access to channels, manifest and contract validation
+Authentication Plugin ← Managing identity and tokens
+Modules               ← Input validation, protecting business logic
+Platform              ← Execution environment security
+UI                    ← Preventing the display of sensitive data
 ```
 
-## What Security Is Not
+## What Security is Not
 
-* Security is not a separate plugin that can be added or removed
-* Security is not the sole responsibility of one part
-* Security must not be an excuse to complicate the architecture — simple and predictable rules are the most secure
+* Security is not a separate plugin that can be added or removed.
+* Security is not the responsibility of just one part.
+* Security should not be an excuse to complicate the architecture; simple and predictable rules are more secure.

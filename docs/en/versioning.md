@@ -2,20 +2,20 @@
 
 ## Introduction
 
-Versioning specifies what stage of evolution each part of the system is at and which architecture version it is compatible with. Consistent versioning prevents hidden conflicts, unexpected incompatibilities, and runtime errors.
+Versioning specifies at what stage of evolution each part of the system is and which version of the architecture it is compatible with. Consistent versioning prevents hidden conflicts, unexpected incompatibilities, and runtime errors.
 
-## Version Formats
+## Versioning Format
 
-### Two-segment — MAJOR.MINOR
+### Two-Part — MAJOR.MINOR
 
-For parts that do not have independent bug fixes and whose changes either break structure or add something new:
+For parts that do not have independent bug fixes and whose changes either break the structure or add something new:
 
 * **Architecture** — `1.0`, `1.1`, `2.0`
 * **Contract** — `1.0`, `1.1`, `2.0`
 
-### Three-segment — MAJOR.MINOR.PATCH
+### Three-Part — MAJOR.MINOR.PATCH
 
-For parts that can have bugs and need independent fixes:
+For parts that can contain bugs and require independent fixes:
 
 * **Core** — `1.0.0`, `1.0.1`, `1.1.0`
 * **Module** — `1.0.0`, `1.0.1`, `1.1.0`
@@ -25,15 +25,15 @@ For parts that can have bugs and need independent fixes:
 
 ## Meaning of Each Segment
 
-**MAJOR** — A breaking change. Dependent parts must be updated.
+**MAJOR** — A change that breaks compatibility. Dependent parts must be updated.
 
-**MINOR** — A backward-compatible change that adds new capability. Dependent parts continue to work without modification.
+**MINOR** — A change that maintains compatibility and adds new functionality. Dependent parts work without modification.
 
-**PATCH** — A bug fix without changing behavior or the contract. Dependent parts continue to work without modification.
+**PATCH** — A bug fix without altering behavior or the contract. Dependent parts work without modification.
 
 ## Declaring Compatibility
 
-Every part must explicitly declare which architecture version it is compatible with. This declaration is part of every part's contract and is the basis for compatibility checks by the core.
+Each part must explicitly declare which version of the architecture it is compatible with. This declaration is part of each part's contract and forms the basis for compatibility checking by the Core.
 
 ### Core
 
@@ -77,33 +77,33 @@ architecture: 1.1
 
 ## One Version at a Time
 
-At any moment, only one version of each part exists in the system. The core does not need to manage multiple parallel versions of a part.
+At any given moment, there is only one version of each part in the system. The Core does not need to manage multiple parallel versions of a single part.
 
 This rule specifies three things:
 
-* If a developer wants to use a new version of a part, they must update it in `bootstrap.json`
-* All parts that depend on that part must be compatible with the new version
-* Verifying and guaranteeing this compatibility is the developer's responsibility, not the core's
+* If a developer wants to use a new version of a part, they must update it in `bootstrap.json`.
+* All parts that depend on that part must be compatible with the new version.
+* Checking and ensuring this compatibility is the responsibility of the developer, not the Core.
 
-If compatibility is not satisfied, the core announces a clear error at startup.
+If compatibility is not met, the Core reports a clear error during startup.
 
 ## Versioning Rules
 
-### Changing Versions
+### Version Changes
 
-* Any change that breaks the contract increments MAJOR and resets MINOR and PATCH to zero
-* Any change that adds new capability without breaking compatibility increments MINOR and resets PATCH to zero
-* Any bug fix that does not change behavior only increments PATCH
+* Any change that breaks the contract increments the MAJOR version and resets MINOR and PATCH to zero.
+* Any change that adds a new feature without breaking compatibility increments the MINOR version and resets PATCH to zero.
+* Any bug fix that does not alter behavior only increments the PATCH version.
 
-### Compatibility Checks
+### Compatibility Checking
 
-* The core checks the declared architecture version of every part before loading it
-* If a part's architecture version does not match the core's architecture version, that part is not loaded and a clear error is given
-* Any core that is compatible with a specific architecture version can load any module, plugin, platform, or UI that declares the same architecture version
+* Before initializing any part, the Core checks the architecture version declared by that part.
+* If a part's architecture version does not match the Core's architecture version, that part is not initialized, and a clear error is thrown.
+* Any Core compatible with a specific architecture version can load any module, plugin, platform, or UI that declares the same architecture version.
 
 ### Version Independence
 
-* Every part has its own independent version
-* Changing the version of one part does not necessarily change the versions of other parts
-* Different parts can evolve at different speeds
-* The architecture version and the core version are not necessarily the same
+* Each part has its own independent version.
+* Changing the version of one part does not necessarily change the versions of other parts.
+* Different parts can evolve at different speeds.
+* The architecture version and the Core version are not necessarily the same.

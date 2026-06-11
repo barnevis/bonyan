@@ -2,115 +2,115 @@
 
 ## Introduction
 
-A plugin is the primary unit for implementing shared infrastructure. Plugins provide capabilities that different modules need but are not dependent on any specific module's logic.
+The plugin is the primary unit for implementing shared infrastructure. Plugins provide capabilities that various modules require, but they are not dependent on the logic of any specific module.
 
-Plugins are distinct from modules. Modules implement product logic; plugins provide infrastructure. A plugin must not know what product is built on top of it.
+Plugins are distinct from modules. Modules implement the product's logic; plugins provide infrastructure. A plugin should not know what product is being built on top of it.
 
-Plugins are part of the system from day one and are started before modules. Modules cannot function without the plugins they depend on.
+Plugins are part of the system from day one and are initialized before modules. Modules cannot function without their required plugins.
 
 ## Plugin Responsibilities
 
-Plugins are responsible for implementing infrastructure that is shared across different projects:
+Plugins are responsible for implementing infrastructures that are shared across different projects:
 
-* **Storage** — persisting and retrieving data
-* **Authentication** — managing user identity and access
-* **Routing** — managing navigation between different parts of the product
-* **AI integration** — connecting to AI models and services
-* **Analytics** — collecting and sending analytical events
-* **Notifications** — sending notifications to users through different channels
+* **Storage** — Data retention and retrieval
+* **Authentication** — Managing user identity and access
+* **Routing** — Managing navigation between different parts of the product
+* **AI Integration** — Connecting to AI models and services
+* **Data Analytics** — Collecting and sending analytical events
+* **Notifications** — Sending notifications to the user through various channels
 
-## Plugin Structure
+## Structure of a Plugin
 
-Every plugin consists of three parts:
+Each plugin consists of three parts:
 
-**Manifest** — A file that defines the plugin's identity, version, architecture compatibility, implemented contract, dependencies, and required configuration. The core reads the manifest to recognize and load the plugin.
+**Manifest** — The file that defines the identity, version, architectural compatibility, implemented contract, dependencies, and required configuration. The Core recognizes and loads the plugin based on the manifest.
 
-**Contract** — A formal agreement that specifies what public methods this plugin provides. The plugin's contract must be stable because multiple modules depend on it.
+**Contract** — The formal agreement specifying what operations this plugin has implemented, what messages it accepts, what messages it publishes, and which channel it uses.
 
-**Internal implementation** — The details of how the infrastructure is implemented, which is completely private. No other part can directly access a plugin's internal implementation.
+**Internal Implementation** — The execution details of the infrastructure, which is completely private. No part can directly access the internal implementation of a plugin.
 
-## Plugin Relationship with the Core
+## Plugin's Relationship with the Core
 
 ### Loading by the Core
 
-The core recognizes a plugin from its manifest. Information the core reads from the manifest:
+The Core recognizes the plugin via its manifest. The information the Core reads from the manifest includes:
 
 * Name and version
 * Architecture version
-* The contract it implements
+* The implemented contract
 * Required and optional dependencies
 * Required configuration
 
-After reading the manifest, the core checks dependencies and compatibility. If any are not satisfied, the plugin is not started and the core announces a clear error.
+After reading the manifest, the Core checks dependencies and compatibility. If any of these are not met, the plugin is not initialized, and the Core reports a clear error.
 
-### Runtime Environment Dependency
+### Dependency on the Execution Environment
 
-Some plugins only work on specific platforms. A plugin declares this constraint through required dependencies in its manifest. The core verifies that the required platform is loaded before starting the plugin.
+Some plugins only work on specific platforms. The plugin declares this limitation through required dependencies in its manifest. Before initializing the plugin, the Core verifies that the required platform has been loaded.
 
 ### Relationship with the Event Bus
 
 A plugin can interact with the event bus in three ways:
 
-**Listening to the system bus** — A plugin can listen to public system events.
+**Listening to the System Bus** — The plugin can listen to general system events.
 
-**Having a private bus** — Every plugin can have its own private bus. This bus is only for the plugin's internal communications and no other part can directly access it.
+**Having a Private Bus** — Each plugin can have its own private bus. This bus is strictly for the plugin's internal communications, and no other part can access it directly.
 
-**Publishing messages on the system bus** — A plugin can publish messages on the system bus. Access by other parts to a plugin's private bus is defined through the `channels` section in `bootstrap.json`.
+**Publishing Messages on the System Bus** — The plugin can publish messages on the system bus. The access of other parts to the plugin's private bus is defined through the `channels` section in `bootstrap.json`.
 
 ### Core Guarantees
 
-The core gives three guarantees to registered plugins:
+The Core provides registered plugins with three guarantees:
 
-* Dependencies declared in the manifest will be available before startup
-* Required configuration will be available
-* At shutdown, sufficient time will be given to complete operations in progress
+* Dependencies declared in the manifest will be available prior to initialization.
+* The required configuration will be available.
+* During shutdown, sufficient time will be given to complete ongoing operations.
 
 ## Plugin Rules
 
 ### Communication with Other Parts
 
-* Plugins must not depend on modules
-* Plugins must not depend on each other except through an explicit contract
-* All communication must happen through the event bus
+* Plugins must not depend on modules.
+* Plugins must not depend on each other except through an explicit contract.
+* All communication must be conducted through the bus.
 
 ### Logic and Responsibility
 
-* A plugin must not contain product logic
-* A plugin must not know which module uses it
-* A plugin must be usable across different projects without modification
-* A plugin's internal implementation must be replaceable without affecting modules
+* A plugin must not contain product logic.
+* A plugin must not know which module is using it.
+* A plugin must be usable across different projects without modification.
+* The plugin's internal implementation must be replaceable without affecting the modules.
 
 ### Isolation
 
-* Every plugin must be replaceable without affecting other plugins
-* An error in one plugin must not propagate to modules that do not use it
-* A plugin must contain its own internal errors and notify by publishing a message on the event bus
+* Each plugin must be replaceable without affecting other plugins.
+* An error in a plugin must not propagate to modules that do not use it.
+* The plugin must contain its internal errors and notify the system by publishing a message on the bus.
 
 ## Plugin Lifecycle
 
-Plugins are started before modules and stopped after modules.
+Plugins are initialized before modules and stopped after modules.
 
-### Startup
+### Initialization
 
-1. Read the manifest
-2. Check architecture version compatibility
-3. Check dependencies on other plugins
-4. Check required dependencies on the platform
-5. Load configuration from the core
-6. Check contract implementation
-7. Start internal infrastructure
-8. Register in the core registry
-9. Plugin is ready
+1. Reading the manifest
+2. Checking architecture version compatibility
+3. Checking dependencies on other plugins
+4. Checking required platform dependencies
+5. Loading configuration from the Core
+6. Validating the contract implementation
+7. Initializing the internal infrastructure
+8. Registering in the Core's registry
+9. The plugin is ready
 
-### Shutdown
+### Stopping
 
-1. Unsubscribe from event buses
-2. Complete operations in progress
-3. Release resources
-4. Remove from the core registry
+1. Unsubscribing from event buses
+2. Completing ongoing operations
+3. Releasing resources
+4. Removing from the Core's registry
 
-## What a Plugin Is Not
+## What a Plugin is Not
 
-* A plugin is not responsible for product logic — that is the module's job
-* A plugin is not responsible for displaying data — that is the UI's job
-* A plugin must not be designed for a specific project — it must be shareable across different projects
+* A plugin is not responsible for product logic; this is the module's responsibility.
+* A plugin is not responsible for data presentation; this is the UI's responsibility.
+* A plugin must not be designed for a specific project; it must be shareable across different projects.

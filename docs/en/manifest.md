@@ -2,54 +2,54 @@
 
 ## Introduction
 
-The manifest is a file that every part of the system — plugin, module, platform, and UI — must have. The manifest is the only authoritative source for understanding a part. The core reads the manifest to obtain all the information it needs to load a part, check compatibility, and manage dependencies.
+The manifest is a file that every part of the system — plugin, module, platform, and UI — must have. The manifest is the single source of truth for identifying a part. From the manifest, the Core obtains all the necessary information for loading, checking compatibility, and managing dependencies.
 
-The manifest is different from the contract. The contract specifies what methods a part provides and what messages it publishes. The manifest specifies who a part is, what version it has, what contract it implements, and what it needs.
+A manifest is different from a contract. A contract is a formal agreement specifying what operations this part has implemented, what messages it accepts, and what messages it publishes. The manifest specifies who a part is, what version it has, what contract it implements, and what it needs.
 
-The core always reads the manifest and contract together. If either is missing, the part is not loaded.
+The Core always reads the manifest and the contract together. If either is missing, the part is not loaded.
 
-## Format
+## Manifest Format
 
-The manifest is a JSON file named `manifest.json`. The core reads and validates this file before loading any part.
+The manifest is a JSON file named `manifest.json`. The Core reads and validates this file before loading any part.
 
-## Structure
+## Manifest Structure
 
-Every manifest consists of six sections:
+Each manifest consists of six sections:
 
-**identity** — The part's identity including name, type, version, description, author, and license.
+**identity** — The part's identity, including name, type, version, description, author, and license.
 
-**compatibility** — The architecture version this part is compatible with.
+**compatibility** — The architecture version with which this part is compatible.
 
-**implements** — The name and version of the contract this part implements.
+**implements** — The name and version of the contract this part has implemented.
 
-**dependencies** — Dependencies are divided into two categories: required dependencies without which the part cannot function, and optional dependencies that are used if available but whose absence does not prevent the part from working.
+**dependencies** — Dependencies are divided into two categories: `required` dependencies, without which the part will not function, and `optional` dependencies, which are used if available, but their absence does not prevent operation.
 
-**config** — The configuration settings this part needs for startup, along with their default values.
+**config** — The configurations this part needs for initialization, along with default values.
 
-**bus** — Declares the need for a private bus. This field is optional and only defined when the part needs a private bus.
+**bus** — Declaration of the need for a private bus. This field is optional and is defined only if the part requires a private bus.
 
 ## Manifest Validation
 
-The core validates the manifest in two phases before loading any part:
+Before loading any part, the Core validates the manifest in two stages:
 
-**Phase One — Structure Validation:**
+**Stage One — Structure Validation:**
 ```text
-Are all required fields present?
-Does the version have the correct format? (MAJOR.MINOR.PATCH)
+Are all mandatory fields present?
+Is the version in the correct format? (MAJOR.MINOR.PATCH)
 Is the part type one of the allowed values? (module, plugin, platform, ui)
-Does the implements field have a contract name and version?
+Does the 'implements' field contain the contract name and version?
 ```
 
-**Phase Two — Content Validation:**
+**Stage Two — Content Validation:**
 ```text
-Is the architecture version compatible with the core?
-Does the contract declared in implements exist?
-Are required dependencies available?
-Is the required runtime environment active?
-Do required config keys have values?
+Is the architecture version compatible with the Core?
+Does the contract declared in 'implements' exist?
+Are the required dependencies available?
+Is the required execution environment the current one?
+Do the 'required' configurations have values?
 ```
 
-If any of these checks fail, the part is not loaded and the core announces a clear error. Optional dependencies are not checked during validation and their absence is not an error.
+If any of these checks fail, the part is not loaded, and the Core reports a clear error. Optional dependencies are not checked during validation, and their absence is not an error.
 
 ## Plugin Manifest Example
 
@@ -198,7 +198,7 @@ If any of these checks fail, the part is not loaded and the core announces a cle
     "name": "my-company.ui.web",
     "type": "ui",
     "version": "1.0.0",
-    "description": "Web UI",
+    "description": "Web user interface",
     "author": "my-company",
     "license": "MIT"
   },
@@ -243,14 +243,14 @@ If any of these checks fail, the part is not loaded and the core announces a cle
 
 ## Core Manifest
 
-Unlike other parts, the core does not have a `manifest.json` file. The core is introduced in `bootstrap.json` and its information is read directly by itself. This exception exists because the core runs before any loading mechanism.
+Unlike other parts, the Core does not have a `manifest.json` file. The Core is declared in `bootstrap.json`, and its information is read directly by itself. This exception is due to the fact that the Core executes before any loading mechanism.
 
-## Rules
+## Manifest Rules
 
-* Every part must have a `manifest.json` file
-* The manifest must be written before implementation
-* The core always reads the manifest and contract together — the absence of either is an error
-* Required dependencies must be available before the part starts
-* Optional dependencies are used if available and their absence is not an error
-* The configuration a part needs is defined only in that part's own manifest
-* If a setting has `required: true` and no value is provided for it, the core does not load the part
+* Every part must have a `manifest.json` file.
+* The manifest must be written before implementation.
+* The Core always reads the manifest and contract together; the absence of either is an error.
+* Required dependencies must be available before the part is initialized.
+* Optional dependencies are used if present, and their absence is not an error.
+* The configuration required by each part is defined exclusively in that part's manifest.
+* If a setting is marked as `required: true` and no value is defined for it, the Core will not load the part.

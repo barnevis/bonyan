@@ -2,49 +2,55 @@
 
 ## Introduction
 
-This architecture is a modular, cross-platform structure for building software products based on JavaScript, HTML, and CSS — designed without dependency on heavy frameworks.
+This architecture is a modular, cross-platform structure for developing software products based on JavaScript, HTML, and CSS, designed without dependency on heavy frameworks.
 
-The primary goal is to reduce complexity, increase maintainability, improve code reuse, and simplify development by both humans and AI models.
+The main objective of this architecture is to reduce complexity, increase maintainability, improve code reusability, and simplify development for both humans and AI models.
 
-This architecture aims to reduce dependency on frameworks, hidden behaviors, and complex abstractions — relying instead on explicit contracts, clear boundaries, and predictable structures.
+This architecture strives to reduce reliance on frameworks, hidden behaviors, and complex abstractions, relying instead on transparent contracts, clear boundaries, and predictable structures.
+
+Every part of the system has a contract specifying the methods it provides and the messages it emits. Parts know each other exclusively through these contracts, and no part is aware of the internal details of another.
 
 ## Architecture Goals
 
 The architecture must:
 
 * Accelerate product development
-* Increase reuse of capabilities
-* Reduce coupling between product parts
-* Make development by humans and AI models simpler and more reliable
-* Evolve over the long term without complete rewrites
+* Increase feature reusability
+* Reduce dependencies between product components
+* Make development simpler and more reliable for both humans and AI models
+* Evolve over the long term without requiring a complete rewrite
 
 ## Overall Structure
 
-The system consists of five main parts, each with a specific responsibility:
+This architecture is event-driven. No part communicates directly with another. The only communication channel between parts is the Event Bus, which is managed by the Core.
+
+The system consists of six main parts, each with a specific responsibility:
 
 ```text
-        Modules
-       ↙         ↘
-   UI          Plugins
-       ↘         ↙
-          Core
-            ↓
-         Platform
+                     Core
+                      |
+                  Event Bus
+      ┌─────────┬──────┴──────┬─────────┐
+   Modules   Plugins         UI      Platform
+      └─────────┴─────────────┴─────────┘
+                   Contracts
 ```
 
-* **Modules** implement the core logic and capabilities of the product
-* **UI** displays data, receives user interactions, and collects user-entered data
-* **Plugins** provide shared infrastructure
-* **Core** coordinates between parts through the event bus
-* **Platform** provides the connection to the runtime environment
+* **Core** manages the system's lifecycle, loads the components, and provides them with the event bus.
+* **Event Bus** is the only way of communication between all parts — there are no exceptions.
+* **Contracts** are the formal agreements between parts, specifying what methods each part provides and what messages it emits.
+* **Modules** implement the product's core logic and functionalities.
+* **Plugins** provide shared, reusable infrastructure.
+* **User Interface (UI)** displays data, captures user interactions, and collects user-inputted data.
+* **Platform** provides the connection to the execution environment.
 
 ## Architecture Layers
 
 ### Core
 
-The core is the central part of the architecture, responsible for coordination and management of architecture components.
+The Core is the central part of the architecture, responsible for coordinating and managing architectural components.
 
-The core does not know the project's logic, is not dependent on the UI, and is not aware of runtime environment details. The core does not interfere in data transfer between parts.
+The Core does not know the project's logic, is not dependent on the UI, and is unaware of the execution environment's details. The Core does not interfere with data transfer between parts.
 
 Core responsibilities:
 
@@ -54,75 +60,103 @@ Core responsibilities:
 * Service registry
 * Event bus management
 * Error management
-* Shared state maintenance
+* Maintaining shared state
 * Configuration management
 * Internal logging
 
 ### Event Bus
 
-The event bus is the only permitted channel for communication between parts and is managed by the core.
+The Event Bus is the only communication channel between parts. No part can communicate directly with another — no direct calls, no state sharing, no direct dependencies. If a part wants to notify, transfer data, or make a request, it must do so through the bus.
+
+This rule has no exceptions.
+
+#### Bus Types
 
 ```text
-Event Bus  →  The only communication channel between all parts
+System Bus  ← General events that all parts can hear
+Private Bus ← Private events of each part that only authorized parts can hear
 ```
 
-A message can carry a `data` field. Small data can be transferred directly in the message. Large data must be stored in a temporary storage plugin and only its identifier passed in the message. Sensitive data such as tokens or passwords must not be placed in messages.
+The private bus is used exclusively for sensitive data or high-frequency internal events that are irrelevant to the rest of the parts. Access to each part's private bus is defined in `bootstrap.json`.
 
-Any message whose response must be matched to the original request must carry a unique identifier. The response must return the same identifier so the sender can match the response to its request.
-
-Any part that publishes a message and expects a response is responsible for handling the no-response case. If no response arrives within the expected time window, the part must report the error to the user.
+#### Bus Operations
 
 ```text
-task:created      →  { data: { id: "123" } }
-file:uploaded     →  { data: { id: "abc123", size: 10485760, mimeType: "image/png" } }
+Publish     ← A part announces that something has happened
+Subscribe   ← A part announces that it cares about an event
+Unsubscribe ← A part announces that it no longer cares about an event
+```
+
+The publisher does not know who receives the event. The receiver does not know who published the event. This separation is intentional and keeps the parts independent of each other.
+
+#### Message Structure
+
+A message can include a `data` field:
+
+* Small data can be transferred directly within the message.
+* Large data must be kept in a temporary storage plugin, and only its identifier (ID) should be transferred in the message.
+* Sensitive data like tokens or passwords must not be included in the message.
+
+```text
+task:created       → { data: { id: "123" } }
+file:uploaded      → { data: { id: "abc123", size: 10485760, mimeType: "image/png" } }
 transactions:ready → { data: { ref: "store-key-xyz" } }
-core:ready        →  no data
-report:requested  →  { data: { requestId: "req-123", from: "2024-01-01", to: "2024-12-31" } }
-report:ready      →  { data: { requestId: "req-123", result: {...} } }
+core:ready         → without data
 ```
+
+#### Request and Response Matching
+
+Any message whose response must be matched with the original request must carry a unique identifier. The response must return the same identifier so the sender can match the response to its request.
+
+```text
+report:requested → { data: { requestId: "req-123", from: "2024-01-01", to: "2024-12-31" } }
+report:ready     → { data: { requestId: "req-123", result: {...} } }
+```
+
+Any part that publishes a message and expects a response is responsible for managing the non-response state. If no response is received within the expected timeframe, the part must handle the error.
 
 ### Plugins
 
-Plugins provide shared infrastructure and capabilities across projects. Plugins are part of the system from day one and serve as the foundation for modules to operate.
+Plugins provide shared infrastructure and capabilities across projects. Plugins are initialized before modules so that the infrastructure required by the modules is available from the start.
 
-Plugins are responsible for providing infrastructure, not implementing product logic.
+Plugins are responsible for providing infrastructure, not implementing the product's logic.
 
 Examples:
 
 * Storage
 * Authentication
 * Routing
-* AI integration
-* Analytics
+* AI Integration
+* Data Analytics
 
 ### Modules
 
-Modules implement the features and core logic of the product. Each module represents an independent business capability or feature.
+Modules implement the product's core features and logic. Each module represents a business capability or an independent feature.
 
 Examples:
 
-* Task management
-* Chat
+* Task Management
+* Chat / Messaging
 * Projects
 * Notifications
 
-Modules can use plugins but must not depend directly on each other. Each module communicates through the event bus using message types declared in its contract.
+Modules can use plugins, but they must not be directly dependent on each other. Each module communicates with the rest of the system solely through the event bus.
 
-### UI
+### User Interface (UI)
 
-The UI layer is responsible for displaying data, receiving user interactions, and collecting user-entered data.
+The UI layer is responsible for displaying data, receiving user interactions, and collecting user-inputted data.
 
-The UI must not contain core logic. Business logic must live outside the UI to be testable, reusable, and executable in different environments.
+The UI should not contain core logic. Business logic must be placed outside the UI to ensure testability, reusability, and execution across different environments.
 
-All UI communication happens through the event bus:
+All UI communication is done through the event bus:
 
 ```text
-Module publishes message  →  UI is notified  →  requests data via bus  →  display is updated
+Module publishes a message → UI is notified → Requests data via the bus → Display is updated
 ```
 
 ### Platform
 
-The platform layer is responsible for connecting the product to the runtime environment and enabling the product to run in different environments.
+The Platform layer is responsible for connecting the product to the execution environment, enabling the product to run in various environments.
 
 Examples:
 
@@ -130,112 +164,106 @@ Examples:
 * Desktop
 * Mobile
 
-All access to runtime environment capabilities must happen through explicit interfaces and contracts.
+All access to execution environment features must be handled through the platform contract. No part should communicate directly with the execution environment.
 
-## Foundational Principles
+## Fundamental Principles
 
-### 1. Simplicity Over Complexity
+### 1. Simplicity Precedes Complexity
 
-Simplicity is not a decorative choice — it is an architectural principle. Every part of the product must be understandable, have predictable behavior, and be developable without hidden knowledge.
+Simplicity is not a decorative choice, but an architectural principle. Every part of the product must be comprehensible, have predictable behavior, and be developable without requiring hidden knowledge.
 
-Complexity is only acceptable when it creates real, long-term benefit.
+Complexity is only accepted when it provides a real, long-term advantage.
 
 ### 2. Business Logic Must Be Independent
 
-Product logic must not depend on the UI, database type, runtime environment, or external services — and must be able to run in different environments without modification.
+Product logic must not depend on the UI, database type, execution environment, or external services. It must be able to run in different environments without modification.
 
 ### 3. Everything Must Communicate Through Contracts
 
-Product components must not depend directly on each other's implementations. Communication between parts must only happen through explicit, stable contracts.
+Product components must not directly depend on each other's implementations. Communication between parts must occur solely through clear and stable contracts.
 
-Contracts are the foundation of extensibility, replaceability, testability, and AI-driven development.
+Contracts are the fundamental basis for extensibility, interchangeability, testability, and AI-assisted development.
 
-### 4. The Core Must Stay Small and Unaware
+### 4. The Core Must Remain Small and Unaware
 
-The core must not know the project's logic, UI, or runtime environment details. The smaller and more general the core, the more stable and reusable the product will be.
+The Core must not know the project logic, UI, or execution environment details. The smaller and more generic the core, the more stable and usable the product will be.
 
-### 5. All Capabilities Must Be Replaceable
+### 5. All Features Must Be Interchangeable
 
-No part of the product should depend on a specific implementation. The storage system, authentication, UI engine, or API communication method must be replaceable without changing the core logic.
+No part of the product should be dependent on a specific implementation. The storage system, authentication, UI engine, or API communication method must be replaceable without altering the core logic.
 
 ### 6. Modules Must Be Independent and Isolated
 
-Each module must have a clear responsibility, define explicit boundaries, and be developed without direct dependency on other modules.
+Each module must have a specific responsibility, define a clear boundary, and be developed without direct dependency on other modules.
 
-### 7. UI Is Only the Display Layer
+### 7. The UI is Just the Presentation Layer
 
-The UI's job is to display data, receive user interaction, collect user-entered data, and send messages. All decisions and core rules must live outside the UI.
+The UI's job is to display data, receive user interactions, collect user-inputted data, and send messages. All primary decisions and rules must reside outside the UI.
 
-### 8. Architecture Must Be Understandable by Humans and AI
+### 8. The Architecture Must Be Understandable for Humans and AI
 
-This architecture must also be analyzable and developable by AI models. For this reason, the product must have clear structures, small files, limited dependencies, transparent behaviors, and explicit contracts.
+This architecture must also be analyzable and developable by AI models. Therefore, the product must have clear structures, small files, limited dependencies, transparent behaviors, and explicit contracts.
 
 ### 9. Error Isolation
 
-A failure or fault in one module or plugin must not bring down the entire system. Errors must be contained at the boundary where they occur and the system must be able to continue operating, even with reduced capability.
+A failure or defect in a module or plugin must not cause the entire system to crash. Errors must be contained within the boundary where they occur, and the system should be able to continue functioning, even with degraded capabilities.
 
-If a part encounters a critical error during runtime and is removed from the registry, dependent parts continue operating. These parts must listen to the `core:part-failed` event and disable the capabilities that depend on the lost part.
+If a part encounters a critical error during execution and is removed from the registry, dependent parts continue working. These parts must listen to the `core:part-failed` event and disable the functionalities dependent on the lost part.
 
 ### 10. Explicit Data Ownership
 
-Every piece of data in the system must have one clear, single owner. No part may directly modify another part's data. Requests to change data must go through contracts and messages.
+Every piece of data in the system must have a clear and single owner. No part should directly modify another part's data. Requests for data modification must be made through contracts and messages.
 
-### 11. Data Transfer Must Be Explicit and Direct
+### 11. Data Transfer Must Occur Through the Bus
 
-Data can be transferred through the event bus as long as it is not large. If data is large, it must be stored in a temporary storage plugin and only its identifier passed in the message. Modules do not read each other's data directly. Determining what counts as large data is left to the developer; the general principle is that if transferring data through a message causes a performance problem, it should switch to the storage-and-identifier approach.
+Data between parts is transferred only via the event bus. No part can directly read or modify another part's data. If the data is small, it can be transferred directly in the message. If the data is large, it must be kept in a temporary storage plugin, and only its ID should be transferred in the message. Determining whether data is "large" is up to the developer; the general principle is that if transferring data via a message causes performance issues, it should be changed to the storage and ID transfer method.
 
-## Communication Rules Between Parts
+## Inter-Part Communication Rules
 
-The direction of dependencies in the product must be explicit and controlled:
+* The Core must not depend on plugins, modules, or a specific project.
+* All parts communicate with each other exclusively through the event bus.
+* Parts know each other only through contracts.
+* No part should be directly dependent on the internal implementation of another part.
 
-```text
-Modules ← Plugins ← Core ← Platform
-```
+## Ultimate Goal
 
-* The core must not depend on plugins, modules, or any specific project
-* All parts communicate only through the event bus
-* Parts know each other only through contracts
-* No part may depend directly on another part's internal implementation
+The goal of this architecture is to build a product that is fast to develop, easy to maintain, has few dependencies, runs in various environments, and can evolve in the long term without a complete rewrite.
 
-## Final Goal
-
-The goal of this architecture is to build a product that is fast to develop, simple to maintain, has minimal dependencies, runs in different environments, and can evolve over the long term without complete rewrites.
-
-This architecture seeks to create a balance between simplicity, flexibility, extensibility, and long-term stability.
+This architecture seeks to strike a balance between simplicity, flexibility, extensibility, and long-term stability.
 
 ## Testability Principles
 
-Testability in this architecture is a principle, not a choice. The architecture must be designed so that every part can be tested independently from the rest of the system.
+Testability in this architecture is a principle, not an option. The architecture must be designed in a way that allows each part to be tested independently of the rest of the system.
 
-### Core Principles
+### Basic Principles
 
-* Every part must be testable without the core
-* Every part's dependencies must be replaceable with fakes
-* Contracts are the foundation of testability — if a contract is clear, writing tests is straightforward
-* The internal logic of every part must be testable independently of the runtime environment
+* Each part must be testable without needing the Core.
+* Each part must be able to replace its dependencies with mocks/fakes.
+* Contracts are the foundation of testability; if the contract is clear, writing tests is simple.
+* The internal logic of each part must be testable independent of the execution environment.
 
 ### Contract Testing
 
-Every implementation must be tested against its own contract. This means:
+Every implementation must be tested against its contract. This means:
 
-* All methods declared in the contract must have tests
-* Tests must verify declared behavior, not implementation details
-* If a contract changes, tests must be updated
+* All methods declared in the contract must have tests.
+* Tests should verify the declared behavior, not the implementation details.
+* If the contract changes, the tests must be updated.
 
-## External Library Dependencies
+## Dependency on External Libraries
 
-Dependency on external libraries must be controlled and limited. Every external library is a dependency that makes maintenance, updates, and replacement more complex.
+Dependency on external libraries must be controlled and limited. Every external library is a dependency that makes maintenance, updating, and replacement more complex.
 
 Dependency rules for each part:
 
-**Core** — Must have no external libraries. The core must be completely independent to run in any environment without extra dependencies.
+**Core** — Must not have any external libraries. The core must be completely independent so it can run in any environment without additional dependencies.
 
-**Plugins** — May have external libraries because they are infrastructure and responsible for implementing specialized capabilities. External dependencies of a plugin must be declared in the manifest.
+**Plugins** — Can have external libraries because they are infrastructure and are responsible for implementing specialized capabilities. A plugin's external dependencies must be declared in its manifest.
 
-**Modules** — Must not depend directly on external libraries. If a module needs a capability from an external library, that capability must be provided through a plugin.
+**Modules** — Must not depend directly on external libraries. If a module needs a feature from an external library, that feature must be provided through a plugin.
 
-**Platform** — May have external libraries because it depends on runtime environment capabilities.
+**Platform** — Can have external libraries because it depends on the execution environment's capabilities.
 
-**UI** — May have display libraries, but must not use libraries that contain business logic.
+**UI** — Can use presentation libraries but must not use libraries containing business logic.
 
-These rules follow three architectural principles: independence of parts, replaceability, and keeping the core small.
+These rules follow three architectural principles: independence of parts, interchangeability, and keeping the core small.
