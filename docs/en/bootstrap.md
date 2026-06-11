@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The bootstrap configuration is the single source of truth from which the Core understands what parts a project consists of and how messages are routed between buses. Without this file, the Core does not know which plugins, modules, platforms, and user interfaces must be loaded.
+The bootstrap configuration is the single source of truth from which the Core understands what parts a project consists of and how access to buses is configured. Without this file, the Core does not know which plugins, modules, platforms, and user interfaces must be loaded.
 
 Every project has one bootstrap configuration file. This file is the first thing the Core reads upon execution.
 
@@ -162,7 +162,15 @@ After reading the configuration file, the Core performs the following steps in o
 17. Initializing the user interface
 18. The system is ready
 
-If an error occurs at any step, the Core halts startup, logs the error using internal logging, and reports a clear message.
+The Core's behavior in response to startup errors depends on the type of part:
+
+* If the Core, the main platform, or the main user interface cannot be initialized, system startup stops.
+* If a plugin or module does not have access to a required dependency, that part is not loaded.
+* If the absence of a part prevents dependent parts from functioning, those dependent parts are not loaded either.
+* The absence of an optional dependency does not stop startup.
+* All startup errors must be logged with a clear message.
+
+The goal of this behavior is to allow the system to run with degraded capabilities whenever possible, while stopping startup clearly when foundational system parts are unavailable.
 
 ## Core and Manifest
 
@@ -199,4 +207,4 @@ The Core reads these values from the execution environment at startup and replac
 * The `config` values in this file override the manifest's default values.
 * Configuration does not change after system startup.
 * Optional dependencies are checked at startup, but their absence is not an error.
-* The `channels` section specifies which private bus messages of each part are forwarded to the system bus.
+* The `channels` section only specifies access rules for parts and buses; routing or interpreting messages is not the Core's responsibility.

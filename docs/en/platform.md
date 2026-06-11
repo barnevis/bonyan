@@ -63,7 +63,7 @@ Core Limitations:
 
 Each platform consists of three parts:
 
-**Manifest** — The file that defines the platform's identity, version, architectural compatibility, implemented contract, required configuration, and events. The Core recognizes and loads the platform based on the manifest.
+**Manifest** — The file that defines the platform's identity, version, architectural compatibility, implemented contract, required configuration, and messages. The Core recognizes and loads the platform based on the manifest.
 
 **Contract** — The formal agreement specifying what operations this platform has implemented, what messages it accepts, what messages it publishes, and what execution environment capabilities it provides.
 
@@ -99,7 +99,7 @@ The platform provides the execution environment's capabilities to the Core and p
 
 * The platform must not contain product logic.
 * The platform must not depend on modules.
-* The platform must not listen to module events.
+* The platform must not listen to module messages.
 * The platform's interface must be identical across all execution environments.
 
 ### Isolation

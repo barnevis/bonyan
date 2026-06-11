@@ -18,9 +18,9 @@ Each contract consists of four sections:
 
 **Identity (`identity`)** — Includes the name, description, and version of the contract. The name is the unique identifier of this contract in the system. No two contracts can have the same name.
 
-**Methods (`methods`)** — The list of operations implemented by this part. Each operation specifies what this part can do, what parameters it accepts, what output it returns, and what errors might occur. These operations are not directly callable. Access to them is only possible through channel messages.
+**Methods (`methods`)** — The list of operations implemented by this part. Each operation specifies what this part can do, what parameters it accepts, what output it returns, and what errors might occur. Contract methods are not a direct API, and no other part is allowed to call them directly. They are used to describe the part's capabilities, validate the implementation, write tests, and guide humans and AI models. Triggering or using these operations is only possible through the messages defined in the contract.
 
-**Messages (`messages`)** — The list of messages this part publishes. Each message must have a specific type, description, data structure, and emission time (when it is sent).
+**Messages (`messages`)** — The list of messages this part publishes or accepts. Each message must have a specific type, description, data structure, and emission or reception time. At the bus level, the architecture does not technically distinguish between events, requests, commands, or responses; all of them are messages, and the meaning of each message is defined by its `type` and contract.
 
 **Suggested Channel (`suggestedChannel`)** — The identifier of the channel suggested for use with this part's messages.
 
@@ -187,6 +187,25 @@ If structure validation fails, the part is not loaded. If implementation validat
   "suggestedChannel": "task.bus"
 }
 ```
+
+## Basic Message Structure
+
+Every message must have a `type`. A message may also include `data` and `correlationId`. Technical fields such as `id`, `source`, and `timestamp` are completed by the bus or the Core.
+
+```json
+{
+  "id": "msg-123",
+  "type": "task:create",
+  "source": "my-company.ui.web",
+  "data": {
+    "title": "Example"
+  },
+  "correlationId": "req-456",
+  "timestamp": "2026-06-11T12:00:00.000Z"
+}
+```
+
+`correlationId` is only required when multiple messages must be related to the same flow, such as a request and response, or the start and end of an operation.
 
 ## Contract Rules
 

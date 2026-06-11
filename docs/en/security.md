@@ -25,7 +25,7 @@ If a part is compromised or exhibits abnormal behavior, its impact must remain c
 
 ### Transparency
 
-Every security action — rejecting a request, filtering an event, or blocking access — must be logged. Hidden security is not reliable security.
+Every security action — rejecting a request, rejecting or limiting a message, or blocking access — must be logged. Hidden security is not reliable security.
 
 ## Security Layers
 
@@ -67,6 +67,21 @@ Authentication Plugin ← Managing identity and tokens
 Modules               ← Input validation, protecting business logic
 Platform              ← Execution environment security
 UI                    ← Preventing the display of sensitive data
+```
+
+## Early-Version Security Assumption
+
+In the early versions, this architecture assumes that the parts loaded by the Core are trusted and come from a known source. Channel access control is an architectural boundary, not a full runtime sandbox.
+
+If a product needs to run third-party plugins or untrusted code, stronger isolation mechanisms such as Workers, sandboxed iframes, process isolation, or similar mechanisms must be added in future versions.
+
+Therefore, in the early versions, the main security goals are:
+
+```text
+Clear boundaries between trusted parts
+Channel access control
+Preventing sensitive data leakage through messages
+Input validation at each part boundary
 ```
 
 ## What Security is Not

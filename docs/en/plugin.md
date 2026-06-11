@@ -16,7 +16,7 @@ Plugins are responsible for implementing infrastructures that are shared across 
 * **Authentication** — Managing user identity and access
 * **Routing** — Managing navigation between different parts of the product
 * **AI Integration** — Connecting to AI models and services
-* **Data Analytics** — Collecting and sending analytical events
+* **Data Analytics** — Collecting and sending analytical messages
 * **Notifications** — Sending notifications to the user through various channels
 
 ## Structure of a Plugin
@@ -51,7 +51,7 @@ Some plugins only work on specific platforms. The plugin declares this limitatio
 
 A plugin can interact with the event bus in three ways:
 
-**Listening to the System Bus** — The plugin can listen to general system events.
+**Listening to the System Bus** — The plugin can listen to general system messages.
 
 **Having a Private Bus** — Each plugin can have its own private bus. This bus is strictly for the plugin's internal communications, and no other part can access it directly.
 

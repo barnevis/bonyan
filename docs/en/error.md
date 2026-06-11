@@ -10,7 +10,7 @@ The primary goal is that an error in a single part neither crashes the system no
 
 Errors in this architecture are divided into three categories:
 
-**Startup Error** — An error that occurs during the loading or initialization of a part. Examples include missing dependencies, version incompatibility, or incomplete configuration. This error prevents that specific part from loading, but the system continues to operate.
+**Startup Error** — An error that occurs during the loading or initialization of a part. Examples include missing dependencies, version incompatibility, or incomplete configuration. This error usually prevents that specific part from loading, and the system continues with degraded capabilities whenever possible. If the error belongs to foundational parts such as the Core, the main platform, or the main user interface, system startup stops.
 
 **Operational Error** — An error that occurs during the execution of an operation. Examples include a method failure, a dropped connection, or invalid data. This error must be contained within the part's own boundary.
 
@@ -55,21 +55,23 @@ Every error in this architecture must contain this information:
 
 * The Core only logs errors related to the startup, loading, and validation of parts.
 * The Core notifies the system about critical errors via the system bus.
-* The Core never halts the entire system due to an error in a single part.
+* At runtime, the Core never halts the entire system due to an error in a non-foundational part.
 
 ### Error Notification
 
-When a part encounters a critical error, the Core publishes this event on the system bus:
+When a part encounters a critical error, the Core publishes this message on the system bus:
 
 ```json
 {
-  "event": "core:part-failed",
-  "part": "my-company.module.task",
-  "type": "critical"
+  "type": "core:part-failed",
+  "data": {
+    "part": "my-company.module.task",
+    "errorType": "critical"
+  }
 }
 ```
 
-The UI and other interested parts can listen to this event and react appropriately.
+The UI and other interested parts can listen to this message and react appropriately.
 
 ## What Error Management is Not
 

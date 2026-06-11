@@ -9,7 +9,7 @@ Consistent and conventional naming is one of the most critical factors for reada
 * All names are written in English.
 * Multi-word names use `kebab-case`.
 * A dot (`.`) is the separator for the main segments of a name.
-* A colon (`:`) separates an event's name from its verb.
+* A colon (`:`) separates a message name from its verb and status.
 * No two parts in a system can have the same name.
 
 ## Part Naming Format
@@ -86,24 +86,48 @@ task.bus         ← The private bus of the task module
 indexed-db.bus   ← The private bus of the indexed-db plugin
 ```
 
-### Events
+### Messages
 
-Events follow the `name:verb` format, which includes two types:
+At the bus level, everything is a message. The architecture does not technically distinguish between an event, request, command, or response. The meaning of a message is defined by its name and contract.
+
+Messages follow the `name:verb` format:
 
 ```text
-Event (happened) ← Past tense verb     storage:saved
-Request          ← Present tense verb  storage:get, storage:save
+name:verb
 ```
 
+For messages that announce the result or failure of an operation, simple suffixes are used:
+
 ```text
+name:verb:result  ← Successful result of an operation
+name:verb:failed  ← Failure of an operation
+```
+
+Examples:
+
+```text
+task:create
+task:create:result
+task:create:failed
 task:created
 task:updated
 task:deleted
-auth:succeeded
-auth:failed
+storage:get
+storage:get:result
+storage:get:failed
 storage:synced
-storage:saved
-storage:save-failed
+auth:login
+auth:login:result
+auth:login:failed
+auth:logged-in
+```
+
+Recommended readability rule:
+
+```text
+Messages that start an operation usually use a present-tense verb: task:create, storage:get
+Messages that announce that something happened usually use a past-tense verb: task:created, auth:logged-in
+Result and failure messages use :result and :failed
 ```
 
 ### Methods (Operations)
@@ -118,9 +142,9 @@ task.update
 task.delete
 ```
 
-### Core Events
+### Core Messages
 
-Events that the Core publishes on the system bus follow the `core:verb` format:
+Messages that the Core publishes on the system bus follow the `core:verb` format:
 
 ```text
 core:ready          ← The system is ready
@@ -135,4 +159,4 @@ core:part-unloaded  ← A part was removed from the registry
 * The part type must be exactly one of the values: `core`, `module`, `plugin`, `platform`, or `ui`.
 * The part name must be short, clear, and descriptive.
 * Unknown or ambiguous abbreviations should be avoided.
-* An event name must be specific enough to be understood without additional explanation.
+* A message name must be specific enough to be understood without additional explanation.
