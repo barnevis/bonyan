@@ -88,7 +88,12 @@ indexed-db.bus   ← گذرگاه خصوصی افزونه indexed-db
 
 ### رویدادها
 
-رویدادها از قالب `نام:فعل` پیروی می‌کنند:
+رویدادها از قالب `نام:فعل` پیروی می‌کنند، که شامل دو نوع است:
+
+```text
+رویداد (اتفاق افتاده)  ←  فعل گذشته   storage:saved
+درخواست               ←  فعل حال     storage:get، storage:save
+```
 
 ```text
 task:created
@@ -97,9 +102,9 @@ task:deleted
 auth:succeeded
 auth:failed
 storage:synced
+storage:saved
+storage:save-failed
 ```
-
-فعل رویداد باید گذشته باشد چون رویداد اعلام می‌کند چه اتفاقی افتاده، نه چه اتفاقی قرار است بیفتد.
 
 ### متدها (عملیات‌ها)
 
