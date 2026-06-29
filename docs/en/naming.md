@@ -1,162 +1,68 @@
-# Naming Conventions
+# Naming
 
 ## Introduction
 
-Consistent and conventional naming is one of the most critical factors for readability, maintainability, and extensibility in this architecture. When naming conventions are predictable, both humans and AI models can understand the type, owner, and role of each part without needing further explanation.
+Naming conventions in Bonyan are few and simple. The goal is that anyone reading the code immediately understands what they are looking at and where it came from.
 
-## General Principles
+## Plugin Naming
 
-* All names are written in English.
-* Multi-word names use `kebab-case`.
-* A dot (`.`) is the separator for the main segments of a name.
-* A colon (`:`) separates a message name from its verb and status.
-* No two parts in a system can have the same name.
+All plugins follow a two-segment format:
 
-## Part Naming Format
-
-All core components of the architecture follow a three-segment format:
-
-```text
-vendor.type.name
+```
+vendor.name
 ```
 
-* **Vendor** — The name of the person, team, or organization that wrote this part.
-* **Type** — The type of the part within the architecture.
-* **Name** — The specific name of this part.
+**vendor** is the name of the person, team, or organization that wrote the plugin. This segment prevents name collisions between plugins from different sources.
 
-### Core
+**name** is a short, descriptive name for the plugin. It should convey what the plugin does.
 
-```text
-my-company.core.main
+Examples:
+- `myfinance.transactions`
+- `myfinance.accounts`
+- `myfinance.storage`
+- `acme.reports`
+
+No two plugins in the same system may share the same name. The Core checks this uniqueness at startup.
+
+## Service Naming
+
+Services take the name of the plugin that provides them, plus a `.service` suffix:
+
 ```
-
-The Core is usually unique, but if multiple teams have different cores, the vendor name distinguishes them.
-
-### Module
-
-```text
-my-company.module.task
-my-company.module.chat
-my-company.module.notification
-```
-
-### Plugin
-
-```text
-my-company.plugin.indexed-db
-my-company.plugin.auth
-my-company.plugin.router
-```
-
-### Platform
-
-```text
-my-company.platform.browser
-my-company.platform.mobile
-my-company.platform.desktop
-```
-
-### User Interface (UI)
-
-```text
-my-company.ui.web
-my-company.ui.mobile
-my-company.ui.desktop
-```
-
-### Contract
-
-```text
-my-company.contract.task
-my-company.contract.storage
-my-company.contract.auth
-```
-
-## Internal Elements Naming
-
-Because internal elements exist within the scope of a specific part, they do not require the vendor name.
-
-### Channel
-
-Channels follow the `name.channel` format:
-
-```text
-system.channel       ← The system channel, shared among all parts
-task.channel         ← The private channel of the task module
-indexed-db.channel   ← The private channel of the indexed-db plugin
-```
-
-### Messages
-
-At the channel level, everything is a message. The architecture does not technically distinguish between an event, request, command, or response. The meaning of a message is defined by its name and contract.
-
-Messages follow the `name:verb` format:
-
-```text
-name:verb
-```
-
-For messages that announce the result or failure of an operation, simple suffixes are used:
-
-```text
-name:verb:result  ← Successful result of an operation
-name:verb:failed  ← Failure of an operation
+vendor.name.service
 ```
 
 Examples:
+- `myfinance.transactions.service`
+- `myfinance.storage.service`
+- `acme.reports.service`
 
-```text
-task:create
-task:create:result
-task:create:failed
-task:created
-task:updated
-task:deleted
-storage:get
-storage:get:result
-storage:get:failed
-storage:synced
-auth:login
-auth:login:result
-auth:login:failed
-auth:logged-in
+## Event Naming
+
+Events follow this format:
+
+```
+pluginname:eventname
 ```
 
-Recommended readability rule:
+**pluginname** is the second segment of the plugin name, without the vendor.
 
-```text
-Messages that start an operation usually use a present-tense verb: task:create, storage:get
-Messages that announce that something happened usually use a past-tense verb: task:created, auth:logged-in
-Result and failure messages use :result and :failed
-```
+**eventname** describes what happened, not what should happen.
 
-### Methods (Operations)
+Examples:
+- `transactions:saved`
+- `transactions:deleted`
+- `accounts:updated`
+- `storage:ready`
+- `core:plugin-failed`
+- `core:plugin-crashed`
 
-Methods follow the `name.verb` or `name.verbObject` format:
+## General Naming Rules
 
-```text
-task.getAll
-task.getById
-task.create
-task.update
-task.delete
-```
+**Lowercase and hyphens.** All names are written in lowercase. If a name has multiple words, hyphens are used. Example: `myfinance.budget-reports`.
 
-### Core Messages
+**Descriptive names.** A name should say what the plugin or event is, not how it works.
 
-Messages that the Core publishes on the system channel follow the `core:verb` format:
+**Abbreviations are not allowed.** `transactions` is correct, `txn` is not. Readability matters more than brevity.
 
-```text
-core:ready          ← The system is ready
-core:part-failed    ← A part encountered a critical error
-core:part-loaded    ← A part was successfully loaded
-core:part-unloaded  ← A part was removed from the registry
-```
-
-## Naming Rules
-
-* The vendor name must be clear and unique to prevent name collisions between different parts.
-* The part type must be exactly one of the values: `core`, `module`, `plugin`, `platform`, or `ui`.
-* The part name must be short, clear, and descriptive.
-* Unknown or ambiguous abbreviations should be avoided.
-* A message name must be specific enough to be understood without additional explanation.
+**Event names are in the past tense.** An event is something that has already happened. `saved` is correct, `save` is not. The exception is Core events that start with `core:`.

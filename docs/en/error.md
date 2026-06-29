@@ -2,79 +2,88 @@
 
 ## Introduction
 
-Error management in this architecture is a contract, not an implementation. Each part must report errors in a specific and predictable manner so that the Core can contain and manage them.
-
-The primary goal is that an error in a single part neither crashes the system nor gets lost within it.
-
-## Types of Errors
-
-Errors in this architecture are divided into three categories:
-
-**Startup Error** — An error that occurs during the loading or initialization of a part. Examples include missing dependencies, version incompatibility, or incomplete configuration. This error usually prevents that specific part from loading, and the system continues with degraded capabilities whenever possible. If the error belongs to foundational parts such as the Core, the main platform, or the main user interface, system startup stops.
-
-**Operational Error** — An error that occurs during the execution of an operation. Examples include a method failure, a dropped connection, or invalid data. This error must be contained within the part's own boundary.
-
-**Critical Error** — An error that completely disables a part. The Core removes this part from the registry, sends a notification via the system channel, and the system continues to operate with degraded capabilities.
+Errors are inevitable in any system. Bonyan defines a uniform structure for all errors so that they are predictable, loggable, and manageable. This structure is defined by the Core and every part of the system must follow it.
 
 ## Error Structure
 
-Every error in this architecture must contain this information:
+Every error in Bonyan must include the following fields:
 
-```json
-{
-  "type": "operational",
-  "source": {
-    "part": "my-company.module.task",
-    "method": "create"
-  },
-  "code": "TASK_LIMIT_EXCEEDED",
-  "message": "Task limit exceeded",
-  "timestamp": "2024-01-01T00:00:00Z"
-}
-```
+**code:** A unique code for this type of error. The code allows the error to be identified without depending on the message text.
 
-**type** — The type of error: `startup`, `operational`, or `critical`.
+**message:** A human-readable description of the error. This message is for logging and debugging.
 
-**source** — The source of the error, including the part name and the method where the error occurred.
+**source:** The name of the plugin or part where the error occurred. Follows the `vendor.name` format.
 
-**code** — A unique error code used for tracking and programmatic management.
+**type:** The error type. One of three values: `startup`, `operational`, or `critical`.
 
-**message** — A human-readable message.
+**timestamp:** The exact time the error occurred.
 
-**timestamp** — The exact time the error occurred.
+**detail:** Additional information useful for debugging. This field is optional.
+
+## Error Types
+
+### Startup Error
+
+Occurs while loading a plugin. This type of error is handled by the Core.
+
+Common causes: invalid manifest, incompatible architecture version, missing required dependency, duplicate name.
+
+Core behavior: the plugin is deactivated, the error is recorded in the internal log, and the `core:plugin-failed` event is published via the Event Bus. Startup of the remaining plugins continues unless the failing plugin is an infrastructure plugin.
+
+### Operational Error
+
+Occurs during a normal operation. This type of error is handled by the plugin itself.
+
+Common causes: invalid data, failed operation, unavailable resource.
+
+Plugin behavior: the plugin handles the error, notifies the user if needed, and execution continues. This type of error must not leave the plugin's boundary.
+
+### Critical Error
+
+Completely disables a plugin and is unrecoverable. The plugin reports this error to the Core.
+
+Common causes: loss of connection to a required service, corruption of base data, an unexpected and unrecoverable failure.
+
+Core behavior: the plugin is deactivated, the error is recorded in the internal log, and the `core:plugin-crashed` event is published via the Event Bus. The system continues with degraded capability.
+
+## Error Management Responsibilities
+
+**The Core** handles startup errors and critical errors reported by plugins.
+
+**Plugins** handle their own operational errors. If an error is critical, the plugin reports it to the Core.
+
+**Adapters** receive raw errors from external technologies and convert them to Bonyan's standard error structure. Raw errors never leak into the rest of the application.
+
+## Error Events
+
+The Core publishes these events via the Event Bus:
+
+**`core:plugin-failed`** when a plugin encounters an error during startup.
+
+**`core:plugin-crashed`** when a plugin reports a critical error.
+
+Any plugin that cares about these events can listen and respond appropriately. For example, a UI plugin can listen to `core:plugin-crashed` and display a suitable message to the user.
 
 ## Error Management Rules
 
-### Responsibility of Each Part
+**Every error must have the standard structure.** An error without structure cannot be logged or managed.
 
-* Each part manages and logs its own internal errors and never publishes raw errors outside its boundary.
-* Critical errors that cause a part to crash must be reported via the system channel.
-* No part should ignore (swallow) an error.
+**Every part manages and logs its own internal errors.** Raw errors never leave a part's boundary. Adapters, plugins, and services are each responsible for converting their errors to Bonyan's standard structure.
 
-### Core's Responsibility
+**Operational errors do not leave the plugin's boundary.** The plugin is responsible for managing its own operational errors.
 
-* The Core only logs errors related to the startup, loading, and validation of parts.
-* The Core notifies the system about critical errors via the system channel.
-* At runtime, the Core never halts the entire system due to an error in a non-foundational part.
+**Critical errors must be announced via the Event Bus.** A plugin cannot hide a critical error. The Core receives it, deactivates the plugin, and publishes the appropriate event.
 
-### Error Notification
+**No part may ignore an error.** An ignored error will eventually lead to unpredictable behavior.
 
-When a part encounters a critical error, the Core publishes this message on the system channel:
+**The Core does not stop the entire system because of a failure in one non-infrastructure part.** The system continues with degraded capability.
 
-```json
-{
-  "type": "core:part-failed",
-  "data": {
-    "part": "my-company.module.task",
-    "errorType": "critical"
-  }
-}
-```
+**Error management does not mean hiding errors.** An error must be logged and announced when necessary. Hiding errors makes debugging impossible.
 
-The UI and other interested parts can listen to this message and react appropriately.
+**Error management does not mean infinite retries.** If retry logic is needed, it must be defined within the part itself with a fixed and configurable count.
 
-## What Error Management is Not
+**Error management is not a substitute for testing.** Having error management does not justify skipping tests. These two tools complement each other, they do not replace each other.
 
-* Error management does not mean hiding errors.
-* Error management does not mean infinite retries; retry logic must be defined within the part itself.
-* Error management is not a substitute for testability.
+**Error messages are for humans, error codes are for the system.** Logic never makes decisions based on message text. Decisions are made based on error codes.
+
+**Sensitive data must not appear in errors.** Passwords, tokens, and personal information must not be placed in the error structure, not even in the detail field.

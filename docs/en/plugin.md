@@ -1,116 +1,105 @@
-# Plugin
+# Plugins
 
 ## Introduction
 
-The plugin is the primary unit for implementing shared infrastructure. Plugins provide capabilities that various modules require, but they are not dependent on the logic of any specific module.
+In Bonyan, every feature of the application is implemented as a plugin. A plugin is an independent unit with one implementation and one manifest. The architecture does not concern itself with the internal structure of a plugin. What matters is that the plugin declares itself through its manifest and communicates with the rest of the system through the Registry and the Event Bus.
 
-Plugins are distinct from modules. Modules implement the product's logic; plugins provide infrastructure. A plugin should not know what product is being built on top of it.
+Plugins do not know each other directly. If a plugin needs a capability from another plugin, it gets the service address from the Registry and calls it directly.
 
-Plugins are part of the system from day one and are initialized before modules. Modules cannot function without their required plugins.
+## Plugin Types
 
-## Plugin Responsibilities
+A plugin's type is declared in its manifest and exists for understanding and documentation purposes. The Core does not make decisions based on type. The startup order of plugins is defined in the project configuration file and the developer is responsible for its correctness.
 
-Plugins are responsible for implementing infrastructures that are shared across different projects:
+### Infrastructure
 
-* **Storage** — Data retention and retrieval
-* **Authentication** — Managing user identity and access
-* **Routing** — Managing navigation between different parts of the product
-* **AI Integration** — Connecting to AI models and services
-* **Data Analytics** — Collecting and sending analytical messages
-* **Notifications** — Sending notifications to the user through various channels
+Provides base services that other plugins depend on. Must be listed before other plugins in the configuration file.
 
-## Structure of a Plugin
+Examples: storage, routing, state management, logging, internationalization.
 
-Each plugin consists of three parts:
+### Product
 
-**Manifest** — The file that defines the identity, version, architectural compatibility, implemented contract, dependencies, and required configuration. The Core recognizes and loads the plugin based on the manifest.
+Implements the core business logic of the application. Without these plugins the application cannot fulfill its primary purpose.
 
-**Contract** — The formal agreement specifying what operations this plugin has implemented, what messages it accepts, what messages it publishes, and which channel it uses.
+Examples in a finance application: transactions, accounts, categories.
 
-**Internal Implementation** — The execution details of the infrastructure, which is completely private. No part can directly access the internal implementation of a plugin.
+### Feature
 
-## Plugin's Relationship with the Core
+Provides optional capabilities the application can work without.
 
-### Loading by the Core
+Examples: search, sharing, advanced charts, CSV import.
 
-The Core recognizes the plugin via its manifest. The information the Core reads from the manifest includes:
+### Platform
 
-* Name and version
-* Architecture version
-* The implemented contract
-* Required and optional dependencies
-* Required configuration
+Handles compatibility with the runtime environment. Each platform has a different implementation but exposes the same interface.
 
-After reading the manifest, the Core checks dependencies and compatibility. If any of these are not met, the plugin is not initialized, and the Core reports a clear error.
+Examples: IndexedDB for browser, SQLite for mobile and desktop, FileSystem.
 
-### Dependency on the Execution Environment
+### Transport
 
-Some plugins only work on specific platforms. The plugin declares this limitation through required dependencies in its manifest. Before initializing the plugin, the Core verifies that the required platform has been loaded.
+Manages message transfer between the system and the outside world.
 
-### Relationship with the Channel
+Examples: HTTP, WebSocket, push notifications.
 
-A plugin can interact with the channel in three ways:
+## Manifest
 
-**Listening to the System Channel** — The plugin can listen to general system messages.
+Every plugin has a manifest. The manifest is the only source of truth for understanding a plugin. The Core gets acquainted with a plugin exclusively through its manifest at startup. Anything not declared in the manifest does not exist from the system's perspective.
 
-**Having a Private Channel** — Each plugin can have its own private channel. This channel is strictly for the plugin's internal communications, and no other part can access it directly.
+Full details of the manifest structure are in `manifest.md`.
 
-**Publishing Messages on the System Channel** — The plugin can publish messages on the system channel. The access of other parts to the plugin's private channel is defined through the `channels` section in `bootstrap.json`.
+## User Interface
 
-### Core Guarantees
+The user interface does not live inside a plugin. This rule has no exceptions.
 
-The Core provides registered plugins with three guarantees:
-
-* Dependencies declared in the manifest will be available prior to initialization.
-* The required configuration will be available.
-* During shutdown, sufficient time will be given to complete ongoing operations.
-
-## Plugin Rules
-
-### Communication with Other Parts
-
-* Plugins must not depend on modules.
-* Plugins must not depend on each other except through an explicit contract.
-* All communication must be conducted through the channel.
-
-### Logic and Responsibility
-
-* A plugin must not contain product logic.
-* A plugin must not know which module is using it.
-* A plugin must be usable across different projects without modification.
-* The plugin's internal implementation must be replaceable without affecting the modules.
-
-### Isolation
-
-* Each plugin must be replaceable without affecting other plugins.
-* An error in a plugin must not propagate to modules that do not use it.
-* The plugin must contain its internal errors and notify the system by publishing a message on the channel.
+The UI layer receives data through plugin services. This separation means the same plugin can be used in a minimal application and in a complex dashboard application. The logic is identical, the appearance is different.
 
 ## Plugin Lifecycle
 
-Plugins are initialized before modules and stopped after modules.
+### Startup
 
-### Initialization
+The Core starts plugins in the order defined in the configuration file. For each plugin, these steps are followed:
 
-1. Reading the manifest
-2. Checking architecture version compatibility
-3. Checking dependencies on other plugins
-4. Checking required platform dependencies
-5. Loading configuration from the Core
-6. Validating the contract implementation
-7. Initializing the internal infrastructure
-8. Registering in the Core's registry
-9. The plugin is ready
+1. The plugin's manifest is read and validated.
+2. All required dependencies are verified to exist in the Registry.
+3. The plugin's default configuration is merged with the configuration defined in the project configuration file. Project values take priority.
+4. The plugin is registered and its services are added to the Registry.
+5. The `pluginname:ready` event is published so others know this plugin is available.
 
-### Stopping
+### Startup failure
 
-1. Unsubscribing from channels
-2. Completing ongoing operations
-3. Releasing resources
-4. Removing from the Core's registry
+If a plugin encounters an error during any of these steps, the Core deactivates it, logs the reason, and publishes the `core:plugin-failed` event. Startup of the remaining plugins continues.
 
-## What a Plugin is Not
+### Critical error during runtime
 
-* A plugin is not responsible for product logic; this is the module's responsibility.
-* A plugin is not responsible for data presentation; this is the UI's responsibility.
-* A plugin must not be designed for a specific project; it must be shareable across different projects.
+If a plugin encounters a critical error during runtime, it reports it to the Core. The Core deactivates the plugin, publishes the `core:plugin-crashed` event, and the system continues with degraded capability.
+
+Ordinary operational errors must be handled inside the plugin itself and must not leak outside.
+
+### Shutdown
+
+When the application shuts down, the Core shuts down plugins in reverse startup order:
+
+1. The `core:shutdown` event is published so the plugin has a chance to prepare.
+2. The plugin releases its resources.
+3. The plugin saves any necessary state.
+4. The plugin's services are removed from the Registry.
+5. The `pluginname:stopped` event is published.
+
+## Dependencies
+
+Each plugin declares in its manifest which services it needs. Dependencies come in two kinds:
+
+**Required dependency** means the plugin cannot function at all without this service. If the service is not available, the plugin is deactivated.
+
+**Optional dependency** means the plugin uses the service if it exists. If it does not exist, the plugin works with reduced capability.
+
+## Configuration
+
+A plugin may have default configuration. This is declared in the plugin's manifest. The developer can override these values in the project configuration file. Project values always take priority.
+
+Example: a plugin that communicates with an external API defines its default timeout in the manifest. The developer can change this value in the project configuration file.
+
+## Portability
+
+A plugin is self-contained and can be used in another project without modification, provided that the dependencies declared in its manifest are also available in that project.
+
+This is guaranteed because a plugin has no hidden dependencies. Everything a plugin needs is explicitly declared in its manifest.

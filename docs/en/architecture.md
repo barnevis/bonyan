@@ -2,309 +2,138 @@
 
 ## Introduction
 
-This architecture is a modular, cross-platform structure for developing software products based on JavaScript, HTML, and CSS, designed without dependency on heavy frameworks.
+Bonyan is a layered, plugin-based architecture for building web applications using Vanilla JS, HTML, and CSS. It has no dependency on any framework, library, or build tool.
 
-The main objective of this architecture is to reduce complexity, increase maintainability, improve code reusability, and simplify development for both humans and AI models.
+The primary goals of Bonyan are:
 
-This architecture strives to reduce reliance on frameworks, hidden behaviors, and complex abstractions, relying instead on transparent contracts, clear boundaries, and predictable structures.
+- Complete separation of business logic from the user interface
+- Extensibility without modifying the core
+- Ability to run on browser, mobile (Capacitor), and desktop (Tauri) without any changes to the application code
 
-Every part of the system has a contract specifying the methods it provides and the messages it emits. Parts know each other exclusively through these contracts, and no part is aware of the internal details of another.
+## Foundational Principles
 
-## Architecture Goals
+These principles guide every design decision in Bonyan. Whenever there is ambiguity, the correct answer is the one that aligns with these principles.
 
-The architecture must:
+### Simplicity over complexity
 
-* Accelerate product development
-* Increase feature reusability
-* Reduce dependencies between product components
-* Make development simpler and more reliable for both humans and AI models
-* Evolve over the long term without requiring a complete rewrite
+If two solutions solve the same problem, the simpler one is correct. Complexity must be justified.
 
-## Overall Structure
+### Boundaries are precise and documented
 
-This architecture is message-driven. No part communicates directly with another. The only communication path between parts is through channels managed by the Core.
+Every part knows what it does and what it does not do. Ambiguity in responsibilities is the source of most architectural bugs.
 
-The system consists of six main parts, each with a specific responsibility:
+### Business logic must be independent
 
-```text
-                     Core
-                      |
-                  Channels
-      ┌─────────┬──────┴──────┬─────────┐
-   Modules   Plugins         UI      Platform
-      └─────────┴─────────────┴─────────┘
-                   Contracts
+Logic knows nothing about the user interface, the platform, or the storage technology. This independence is what makes testing, migration, and reuse possible.
+
+### The Core must stay small and unaware
+
+The Core gives addresses, delivers messages, and manages lifecycle. Business logic, display rules, and storage details never enter the Core.
+
+### Portability is the default
+
+Every part should be movable to a new project. Hidden dependencies destroy this ability.
+
+### The developer is responsible
+
+The Core executes without judgment. Responsibility for following the architecture's conventions rests with the developer. This preserves simplicity and avoids unnecessary overhead.
+
+## Overview Diagram
+
+```
+┌─────────────────────────────────────────────────┐
+│                   UI Layer                       │
+│            Web Components · CSS Variables        │
+├─────────────────────────────────────────────────┤
+│                    Plugins                       │
+│    Infrastructure · Product · Feature · Platform │
+├──────────────────┬──────────────────────────────┤
+│    Services      │          Adapters             │
+│  Base · Plugin   │  Storage · Auth · Filesystem  │
+├──────────────────┴──────────────────────────────┤
+│                     Core                         │
+│  Registry · Event Bus · Lifecycle · Validation   │
+└─────────────────────────────────────────────────┘
 ```
 
-* **Core** manages the system's lifecycle, loads the components, and provides them with access to channels.
-* **Channels** are the only way of communication between all parts — there are no exceptions.
-* **Contracts** are the formal agreements between parts, specifying what methods each part provides and what messages it emits.
-* **Modules** implement the product's core logic and functionalities.
-* **Plugins** provide shared, reusable infrastructure.
-* **User Interface (UI)** displays data, captures user interactions, and collects user-inputted data.
-* **Platform** provides the connection to the execution environment.
+## Layers
 
-## Architecture Layers
+Bonyan consists of five layers. Each layer has a single, well-defined responsibility and no layer reaches into another layer's internals.
 
-### Core
+### Layer One — Core
 
-The Core is the central part of the architecture, responsible for coordinating and managing architectural components.
+The smallest and most stable part of the system. The Core contains no business logic. Its sole responsibility is to make the rest of the system work together.
 
-The Core does not know the project's logic, is not dependent on the UI, and is unaware of the execution environment's details. The Core does not interfere with data transfer between parts.
+The Core has seven responsibilities:
 
-Core responsibilities:
+- **Registry:** Holds the address of every registered service. It knows where each service is, not what it does.
+- **Event Bus:** A one-way messaging system. A part publishes a message and does not wait for a response.
+- **Lifecycle:** Manages the startup and shutdown sequence of plugins.
+- **Startup Validation:** Before activating any plugin, the Core reads its manifest and verifies that the architecture version is compatible, required dependencies exist, and the plugin name is unique.
+- **Internal Logging:** The Core logs its own operations — plugin startup, validation errors, unauthorized access attempts. This log is internal and no plugin has direct access to it.
+- **Error Structure and System Error Management:** The Core defines the error structure that all parts of the system must follow. It also manages system-level errors: when a plugin reports a critical error, the Core deactivates it, announces the failure via the Event Bus, and the system continues with degraded capability.
+- **Internal State Management:** The Core maintains a simple internal state: the list of registered plugins and their status, and the list of services available in the registry. This state belongs to the Core and no plugin has direct access to it.
 
-* System lifecycle management
-* Loading and managing the lifecycle of parts
-* Manifest and contract validation
-* Service registry
-* Channel management
-* Error management
-* Maintaining shared state
-* Configuration management
-* Internal logging
+### Layer Two — Services
 
-### Channels
+Services are capabilities that all plugins can use. All services are provided by plugins, not by the Core. The difference lies only in when they are registered:
 
-Channels are the only communication mechanism between parts. No part can communicate directly with another — no direct calls, no state sharing, no direct dependencies. If a part wants to notify, transfer data, or make a request, it must do so by publishing a message on a channel.
+**Base services** are provided by infrastructure plugins that must start before all others. Examples: StorageService, RouterService, NotificationService, StateService. Their startup order is defined in the configuration file.
 
-This rule has no exceptions.
+**Application services** are registered by regular plugins during startup so that other plugins can use them. Example: TransactionService registered by the transactions plugin and used by the reports plugin.
 
-At the channel level, the architecture does not technically distinguish between an "event", "request", "command", or "response". Everything that passes through the channel is a **message**. The meaning of a message is defined by its `type` and by the contracts of the parts.
+In both cases, a plugin asks the Registry for the address of a service, then calls that service directly. The Core is not involved in the call itself.
 
-#### Channel Types
+### Layer Three — Plugins
 
-```text
-System Channel  ← General messages that all authorized parts can hear
-Private Channel ← Private messages of each part that only authorized parts can hear
-```
+Every feature of the application is implemented as a plugin. Every plugin has one implementation and one manifest. The architecture does not concern itself with the internal structure of a plugin. What matters is that the plugin declares itself through its manifest and communicates with the rest of the system through the Registry and the Event Bus.
 
-The private channel is used exclusively for sensitive data or high-frequency internal messages that are irrelevant to the rest of the parts. Access to each part's private channel is defined in `bootstrap.json`.
+Each plugin type serves a distinct purpose:
 
-#### Channel Operations
+- **Infrastructure:** Provides base services that other plugins depend on.
+- **Product:** Implements the core business logic of the application.
+- **Feature:** Provides optional capabilities the application can work without.
+- **Platform:** Handles compatibility with the runtime environment.
+- **Transport:** Manages message transfer between the system and the outside world.
 
-```text
-Publish     ← A part publishes a message to a channel
-Subscribe   ← A part declares that it cares about a specific message type
-Unsubscribe ← A part declares that it no longer listens to that message type
-```
+The user interface does not live inside a plugin. It belongs entirely to the UI layer.
 
-The publisher does not know who receives the message. The receiver does not know who published the message. This separation is intentional and keeps the parts independent of each other.
+### Layer Four — UI Layer
 
-#### Message Structure
+The UI layer is completely separate from plugins. It displays data and forwards user interactions to the logic layer. No business logic exists here.
 
-Every message must have a `type`. A message may also include `data` and `correlationId`. The channel or the Core completes the technical message fields at publish time.
+The UI layer is responsible for four things: displaying data, receiving user interaction, receiving data from the user, and publishing events when appropriate.
 
-Basic message structure:
+The UI layer never holds product data, never applies business rules, and never decides what data to display. Those decisions belong to product plugins.
 
-```json
-{
-  "id": "msg-123",
-  "type": "task:created",
-  "source": "my-company.module.task",
-  "data": {
-    "id": "task-1"
-  },
-  "correlationId": "req-456",
-  "timestamp": "2026-06-11T12:00:00.000Z"
-}
-```
+### Layer Five — Adapters
 
-Fields:
+An adapter is written for anything that connects to the outside world and might differ across platforms or change over time.
 
-* `id` is the unique identifier of the message and is generated by the channel or the Core.
-* `type` is the message type and must be defined in the related contract.
-* `source` is the name of the part that published the message and is set by the channel or the Core.
-* `data` is the message payload and is optional.
-* `correlationId` is used to match related messages and is optional.
-* `timestamp` is the message publish time and is set by the channel or the Core.
+All adapters of the same kind implement an identical set of methods. The rest of the application does not know or care which adapter is active. Swapping an adapter only requires a change in the configuration file.
 
-Data rules:
+Examples of what adapters cover: storage (IndexedDB, PostgreSQL, MariaDB), authentication (email and password, OAuth, biometrics), notifications (browser, mobile push, desktop), file system (browser File API, Capacitor Filesystem, Tauri fs), and output (PDF, CSV, print).
 
-* Small data can be transferred directly within the message.
-* Large data must be kept in a temporary storage plugin, and only its identifier (ID) should be transferred in the message.
-* Sensitive data such as tokens or passwords must not be published on the system channel.
+## Communication Rules
 
-```text
-task:created       → { data: { id: "123" } }
-file:uploaded      → { data: { id: "abc123", size: 10485760, mimeType: "image/png" } }
-transactions:ready → { data: { ref: "store-key-xyz" } }
-core:ready         → without data
-```
+Two communication mechanisms exist in Bonyan. The boundary between them is strict and must not be blurred.
 
-#### Matching Related Messages
+**Service** is used when a part needs something and expects a response. The call is direct: the plugin gets the address from the Registry and calls the service.
 
-Any message whose response or continuation must be matched with the original message may carry a `correlationId`. Follow-up messages must return the same `correlationId` so the sender can relate them to the original flow.
+**Event Bus** is used when a part announces that something happened and does not wait for a response. Any part that needs to know listens independently.
 
-```text
-report:get        → { correlationId: "req-123", data: { from: "2024-01-01", to: "2024-12-31" } }
-report:get:result → { correlationId: "req-123", data: { result: {...} } }
-report:get:failed → { correlationId: "req-123", data: { code: "REPORT_FAILED" } }
-```
+Plugins do not know each other directly. A plugin asks the Registry for the address of the service it needs and then calls that service directly. The Registry is a discovery point, not a communication intermediary.
 
-Any part that publishes a message and expects a response is responsible for managing the non-response state. If no response is received within the expected timeframe, that part must handle the error.
-
-#### Minimum Channel Responsibilities
-
-In the early versions of the architecture, the channel must have at least these responsibilities:
-
-* Publishing messages to an authorized channel
-* Subscribing to a specific message type
-* Unsubscribing when a part stops
-* Enforcing channel access rules
-* Completing technical message fields such as `id`, `source`, and `timestamp`
-* Preventing an error in one listener from affecting other listeners
-* Logging unauthorized attempts to access a channel
-
-### Plugins
-
-Plugins provide shared infrastructure and capabilities across projects. Plugins are initialized before modules so that the infrastructure required by the modules is available from the start.
-
-Plugins are responsible for providing infrastructure, not implementing the product's logic.
-
-Examples:
-
-* Storage
-* Authentication
-* Routing
-* AI Integration
-* Data Analytics
-
-### Modules
-
-Modules implement the product's core features and logic. Each module represents a business capability or an independent feature.
-
-Examples:
-
-* Task Management
-* Chat / Messaging
-* Projects
-* Notifications
-
-Modules can use plugins, but they must not be directly dependent on each other. Each module communicates with the rest of the system solely through channels.
-
-### User Interface (UI)
-
-The UI layer is responsible for displaying data, receiving user interactions, and collecting user-inputted data.
-
-The UI should not contain core logic. Business logic must be placed outside the UI to ensure testability, reusability, and execution across different environments.
-
-All UI communication is done through channels:
-
-```text
-Module publishes a message → UI is notified → Requests data via a channel → Display is updated
-```
-
-### Platform
-
-The Platform layer is responsible for connecting the product to the execution environment, enabling the product to run in various environments.
-
-Examples:
-
-* Browser
-* Desktop
-* Mobile
-
-All access to execution environment features must be handled through the platform contract. No part should communicate directly with the execution environment.
-
-## Fundamental Principles
-
-### 1. Simplicity Precedes Complexity
-
-Simplicity is not a decorative choice, but an architectural principle. Every part of the product must be comprehensible, have predictable behavior, and be developable without requiring hidden knowledge.
-
-Complexity is only accepted when it provides a real, long-term advantage.
-
-### 2. Business Logic Must Be Independent
-
-Product logic must not depend on the UI, database type, execution environment, or external services. It must be able to run in different environments without modification.
-
-### 3. Everything Must Communicate Through Contracts
-
-Product components must not directly depend on each other's implementations. Communication between parts must occur solely through clear and stable contracts.
-
-Contracts are the fundamental basis for extensibility, interchangeability, testability, and AI-assisted development.
-
-### 4. The Core Must Remain Small and Unaware
-
-The Core must not know the project logic, UI, or execution environment details. The smaller and more generic the core, the more stable and usable the product will be.
-
-### 5. All Features Must Be Interchangeable
-
-No part of the product should be dependent on a specific implementation. The storage system, authentication, UI engine, or API communication method must be replaceable without altering the core logic.
-
-### 6. Modules Must Be Independent and Isolated
-
-Each module must have a specific responsibility, define a clear boundary, and be developed without direct dependency on other modules.
-
-### 7. The UI is Just the Presentation Layer
-
-The UI's job is to display data, receive user interactions, collect user-inputted data, and send messages. All primary decisions and rules must reside outside the UI.
-
-### 8. The Architecture Must Be Understandable for Humans and AI
-
-This architecture must also be analyzable and developable by AI models. Therefore, the product must have clear structures, small files, limited dependencies, transparent behaviors, and explicit contracts.
-
-### 9. Error Isolation
-
-A failure or defect in a module or plugin must not cause the entire system to crash. Errors must be contained within the boundary where they occur, and the system should be able to continue functioning, even with degraded capabilities.
-
-If a part encounters a critical error during execution and is removed from the registry, dependent parts continue working. These parts must listen to the `core:part-failed` message and disable the functionalities dependent on the lost part.
-
-### 10. Explicit Data Ownership
-
-Every piece of data in the system must have a clear and single owner. No part should directly modify another part's data. Requests for data modification must be made through contracts and messages.
-
-### 11. Data Transfer Must Occur Through Channels
-
-Data between parts is transferred only via channels. No part can directly read or modify another part's data. If the data is small, it can be transferred directly in the message. If the data is large, it must be kept in a temporary storage plugin, and only its ID should be transferred in the message. Determining whether data is "large" is up to the developer; the general principle is that if transferring data via a message causes performance issues, it should be changed to the storage and ID transfer method.
-
-## Inter-Part Communication Rules
-
-* The Core must not depend on plugins, modules, or a specific project.
-* All parts communicate with each other exclusively through channels.
-* Parts know each other only through contracts.
-* No part should be directly dependent on the internal implementation of another part.
-
-## Ultimate Goal
-
-The goal of this architecture is to build a product that is fast to develop, easy to maintain, has few dependencies, runs in various environments, and can evolve in the long term without a complete rewrite.
-
-This architecture seeks to strike a balance between simplicity, flexibility, extensibility, and long-term stability.
+Sensitive data such as passwords, tokens, and personal information must not be published via the Event Bus.
 
 ## Testability Principles
 
-Testability in this architecture is a principle, not an option. The architecture must be designed in a way that allows each part to be tested independently of the rest of the system.
+Bonyan's architecture is designed so that each part can be tested independently.
 
-### Basic Principles
+**Plugin logic is testable without the Core.** Because logic has no dependency on the Core, the UI, or storage, it can be tested directly without starting the whole system.
 
-* Each part must be testable without needing the Core.
-* Each part must be able to replace its dependencies with mocks/fakes.
-* Contracts are the foundation of testability; if the contract is clear, writing tests is simple.
-* The internal logic of each part must be testable independent of the execution environment.
+**Adapters are replaceable in tests.** Because all adapters of the same kind share one set of methods, a real adapter can be replaced in tests with a simple in-memory version.
 
-### Contract Testing
+**Services are simulatable.** Every service is accessible via the Registry, so in tests a fake service can be registered and the plugin's behavior can be verified without depending on the real service.
 
-Every implementation must be tested against its contract. This means:
-
-* All methods declared in the contract must have tests.
-* Tests should verify the declared behavior, not the implementation details.
-* If the contract changes, the tests must be updated.
-
-## Dependency on External Libraries
-
-Dependency on external libraries must be controlled and limited. Every external library is a dependency that makes maintenance, updating, and replacement more complex.
-
-Dependency rules for each part:
-
-**Core** — Must not have any external libraries. The core must be completely independent so it can run in any environment without additional dependencies.
-
-**Plugins** — Can have external libraries because they are infrastructure and are responsible for implementing specialized capabilities. A plugin's external dependencies must be declared in its manifest.
-
-**Modules** — Must not depend directly on external libraries. If a module needs a feature from an external library, that feature must be provided through a plugin.
-
-**Platform** — Can have external libraries because it depends on the execution environment's capabilities.
-
-**UI** — Can use presentation libraries but must not use libraries containing business logic.
-
-These rules follow three architectural principles: independence of parts, interchangeability, and keeping the core small.
+**The UI is testable independently of logic.** Because UI components only receive data and emit events, they can be tested with synthetic data.

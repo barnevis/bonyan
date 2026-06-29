@@ -2,90 +2,68 @@
 
 ## Introduction
 
-Security in this architecture is not a separate layer, but a principle that flows through all parts. Each part is responsible for the security of its own boundary, and the Core coordinates the security of the entire system.
+Security in Bonyan is not an add-on feature. It is built into the architecture from the start. Every plugin has access only to what it has explicitly declared, and the Core enforces these boundaries.
 
-The goal of security in this architecture is threefold:
-* Prevent unauthorized access between parts
-* Prevent the leakage of sensitive data
-* Limit the impact of a compromised part on the rest of the system
+Bonyan's security philosophy is simple: anything not declared is forbidden.
 
-## Security Principles
+## Declaring Access
 
-### Least Privilege
+Every plugin must explicitly declare in its manifest which services it needs. This declaration is made in the `dependencies` section of the manifest. The Core provides access only to these services at startup.
 
-Each part must only have access to what it needs to perform its duty. Nothing more. This principle is enforced through the manifest. Anything not declared in a part's manifest is unavailable.
+## Security Enforcement by the Core
 
-### Zero Trust
+The Core is the first and most important line of defense in the system.
 
-No part should trust the input of another part without validation. Even if the sender is an internal part of the system.
+**At startup:** The Core validates every plugin's manifest. A plugin with an invalid manifest is not started. The Core verifies that all services declared in `dependencies` are available and gives their addresses to the plugin once. From that point on, service calls are direct and the Core is not involved.
 
-### Impact Containment
+**Attempting to access an undeclared service:** If a plugin requests a service at runtime that it did not declare in its manifest, the request is rejected and recorded in the internal log.
 
-If a part is compromised or exhibits abnormal behavior, its impact must remain confined to that part. The Core's isolation mechanisms guarantee this principle.
+## Sensitive Data
 
-### Transparency
+Sensitive data includes passwords, authentication tokens, encryption keys, and personal user information.
 
-Every security action — rejecting a request, rejecting or limiting a message, or blocking access — must be logged. Hidden security is not reliable security.
+Rules for sensitive data:
 
-## Security Layers
+**Sensitive data is not published via the Event Bus.** The Event Bus is public and all plugins can listen to it.
 
-### Layer One — Core Security
+**Sensitive data is not placed in the error structure.** Not even in the detail field.
 
-The Core is the first and most important line of defense:
-* It must only load parts whose manifest and contract are valid.
-* It must not register any part without full validation.
-* It must create channels strictly based on the project configuration.
-* It must control part access to the channels — no part can access a channel that is not defined in the configuration.
-* It must log any attempt at unauthorized access to a channel.
+**Sensitive data is only transferred through declared services.** And only to plugins that have declared the necessary access.
 
-### Layer Two — Channel Security
+## Adapter Security
 
-Channels are the only way to communicate and transfer data between parts:
-* Small data can be transferred directly in the message.
-* Large data must be kept in a temporary storage plugin, and only its identifier (ID) should be transferred in the message.
-* Sensitive data like passwords, tokens, or personal information must not be published via the system channel.
-* Messages containing sensitive data must use a private channel.
+Adapters communicate with the outside world and are sensitive points in the system.
 
-### Layer Three — Boundary Security
+A storage adapter must not store raw data without processing. If data requires encryption, this responsibility must be explicitly defined.
 
-Each part is responsible for the security of its own boundary:
-* Received inputs must be validated before processing.
-* No part should trust raw external data.
-* Outbound outputs must not leak internal system information or raw error details.
+An authentication adapter is responsible for securely holding login credentials. This information is never transferred to other parts of the system.
 
-### Layer Four — Configuration Security
+## Security Logging
 
-* Sensitive keys like API keys, database passwords, and service tokens must not be stored as plain text in `bootstrap.json`.
-* These values must be provided via environment variables or a secret management service.
-* No part should log sensitive keys.
+The Core records these security events in its internal log:
+
+- An attempt to access an undeclared service
+- An attempt to access a service that does not exist
+- A plugin that was started with an invalid manifest
+
+This log belongs to the Core and no plugin has direct access to it.
 
 ## Security Responsibilities
 
-```text
-Core                  ← Controlling access to channels, manifest and contract validation
-Authentication Plugin ← Managing identity and tokens
-Modules               ← Input validation, protecting business logic
-Platform              ← Execution environment security
-UI                    ← Preventing the display of sensitive data
-```
+**The Core** enforces access boundaries and logs security events.
 
-## Early-Version Security Assumption
+**Plugins** declare only the access they actually need. Declaring more access than necessary is a security weakness.
 
-In the early versions, this architecture assumes that the parts loaded by the Core are trusted and come from a known source. Channel access control is an architectural boundary, not a full runtime sandbox.
+**Adapters** properly handle sensitive data coming from the outside world and never let it leak out.
 
-If a product needs to run third-party plugins or untrusted code, stronger isolation mechanisms such as Workers, sandboxed iframes, process isolation, or similar mechanisms must be added in future versions.
+**The developer** is responsible for the correctness of manifest declarations. The Core enforces what is declared, not what is correct.
 
-Therefore, in the early versions, the main security goals are:
+## Security Rules
 
-```text
-Clear boundaries between trusted parts
-Channel access control
-Preventing sensitive data leakage through messages
-Input validation at each part boundary
-```
+**Anything not declared is forbidden.** This is the foundational security principle in Bonyan and has no exceptions.
 
-## What Security is Not
+**Declare the minimum access needed.** A plugin declares only the access it genuinely requires. Excess access expands the attack surface.
 
-* Security is not a separate plugin that can be added or removed.
-* Security is not the responsibility of just one part.
-* Security should not be an excuse to complicate the architecture; simple and predictable rules are more secure.
+**Sensitive data only through secure paths.** Passwords, tokens, and personal information are never transferred via the Event Bus or the error structure.
+
+**Security is not the same as complexity.** Simple and firm rules are better than complex systems that no one implements correctly.

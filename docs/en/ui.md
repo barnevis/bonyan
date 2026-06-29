@@ -1,122 +1,53 @@
-# User Interface (UI)
+# UI Layer
 
 ## Introduction
 
-The User Interface (UI) is the presentation layer of the product. The UI's responsibility is to display data, capture user interaction, collect user-inputted data, and transmit them to the system via the channel.
-
-The UI is the final layer of the architecture. All decisions, rules, and product logic must have been made before reaching the UI. The UI merely displays the result.
+The UI layer is responsible for displaying data to the user and receiving interaction from them. The UI has no knowledge of product logic, business rules, or infrastructure. This separation ensures that changes to the appearance or technology of the UI do not affect product logic, and the UI can be replaced without modifying any plugin.
 
 ## UI Responsibilities
 
-The UI is responsible for four things:
+The UI layer has four responsibilities:
 
-**Data Presentation** — Displays data received via the channel in a comprehensible format for the user. The UI does not interpret the data; it only displays it.
+**Displaying data:** Renders data received from product plugins. The UI may format data for display — for example showing a date in a localized format or a number with thousand separators — but it does not modify the underlying data.
 
-**Capturing User Interaction** — Captures user inputs such as clicks and navigation, and publishes them as messages on the channel.
+**Receiving user interaction:** Handles clicks, scrolls, selections, and other user interactions.
 
-**Collecting User Data** — Collects data entered by the user, such as forms and text inputs, and transmits them to the system via the channel.
+**Receiving data from the user:** Collects data the user enters, such as filling out a form, and sends it to the relevant plugin for processing.
 
-**Sending Messages** — All user interactions and data are transmitted to the system as messages via the channel. The UI does not know which part processes this message.
+**Publishing events:** When the user performs an action, the UI publishes the appropriate event. The relevant plugin listens and handles the processing.
 
-## Structure of a UI
+## What the UI Is Not
 
-Each UI consists of three parts:
+**The UI is not responsible for product logic.** Business rules, calculations, and product-related validation live in plugins, not in the UI.
 
-**Manifest** — The file that defines the identity, version, architectural compatibility, implemented contract, corresponding platform, required configuration, and the need for a private channel. The Core recognizes and loads the UI based on the manifest.
+**The UI does not own product data.** Data belongs to product plugins. The UI displays it but does not hold it.
 
-**Contract** — The formal agreement specifying what messages this UI publishes, what messages it receives, and which channels it has access to.
+**The UI does not decide what data to display.** That decision belongs to the product plugin. The UI only displays what it receives.
 
-**Internal Implementation** — The details of data presentation and user interaction management, which is completely private.
+**The UI is not responsible for infrastructure.** Storage, routing, and other base services do not belong to the UI layer.
 
-## Relationship with Other Parts
+**The UI does not know product rules.** The UI must not know, for example, that an account balance cannot go negative. That rule lives in the product plugin.
 
-Data flow in the UI follows a specific cycle:
+## Data Flow
 
-```text
-The UI is initialized
-       ↓
-The UI publishes the ui:ready message
-       ↓
-Relevant modules send initial data via the channel
-       ↓
-The UI receives and displays the data
-       ↓
-The user interacts
-       ↓
-The UI publishes a message on the channel
-       ↓
-The relevant module receives and processes the message
-```
+Data in Bonyan flows in two directions:
 
-### Relationship with Modules
+**From plugin to UI:** The plugin prepares data and makes it available to the UI. The UI displays it.
 
-* The UI receives data exclusively through the channel.
-* The UI cannot directly call a module's internal logic.
-* The UI cannot directly modify a module's data.
+**From UI to plugin:** The user performs an action or enters data. The UI publishes the appropriate event. The plugin listens, processes the data, and if needed makes updated data available to the UI.
 
-### Relationship with the Channel
+The UI never directly modifies the state of a plugin.
 
-* All UI communication is conducted through the channel.
-* The channel type — public or private — is defined in `bootstrap.json`.
-* Sensitive data such as passwords or banking information must not be published on the public channel.
-* The UI does not know which part receives its messages.
+## The Display and Logic Boundary
 
-### Relationship with Plugins
+There is a clear line that must be respected:
 
-* The UI can use plugins declared in its manifest.
-* The UI must never implement business logic.
-* Plugins must not depend on the UI or call it directly.
+**Allowed:** Display formatting such as localizing a date, showing a number with thousand separators, or changing color based on a value. Also allowed is visual sorting or filtering that only changes how data is presented, not the underlying data itself.
 
-## UI Rules
+**Not allowed:** Real data filtering, calculations, validation of product rules, or any decision that relates to business logic.
 
-### Logic and Responsibility
+## Implementation Recommendation
 
-* The UI must not contain business logic.
-* The UI must not know the product rules.
-* The UI must not decide what data is displayed; this decision is made by the module.
-* The UI must not mutate data prior to display; it can only format it.
+Bonyan does not impose any specific technology for the UI layer. The choice of technology is the developer's.
 
-### Isolation
-
-* The UI must be replaceable without altering the modules.
-* Changes in the UI's appearance or technology must not harm the product's logic.
-* The UI must not hold the state of product data; data is always received via the channel.
-
-### User Interaction
-
-* Every user interaction must be converted into a specific message.
-* Small data can be transferred directly in the message.
-* Large data must be kept in a temporary storage plugin, and only its identifier (ID) should be transferred in the message.
-* The UI must not predict or simulate the result of an interaction; it waits for the module's response.
-* The UI must indicate loading, error, and success states to the user.
-
-## UI Lifecycle
-
-The UI is the last part to be initialized and the first part to be stopped.
-
-### Initialization
-
-1. Reading the manifest
-2. Checking architecture version compatibility
-3. Checking compatibility with the current platform
-4. Loading configuration from the Core
-5. Validating the contract implementation
-6. Creating the channel based on the definition in `bootstrap.json`
-7. Subscribing to required messages on the channels
-8. Publishing the `ui:ready` message
-9. Receiving initial data via the channel
-10. Preparing the initial display
-11. The UI is ready
-
-### Stopping
-
-1. The Core issues the command to stop the UI
-2. The UI unsubscribes from messages on the channels
-3. The UI releases resources
-
-## What a UI is Not
-
-* The UI is not responsible for product logic; this is the module's responsibility.
-* The UI is not responsible for maintaining product data; data belongs to the modules.
-* The UI is not responsible for infrastructure; this is the plugin's responsibility.
-* The UI is not responsible for making decisions; it only displays the results of decisions.
+That said, Web Components are recommended. Web Components are a browser standard, depend on no framework, and work without modification in Capacitor and Tauri. This aligns with Bonyan's principles of being framework-free and cross-platform.

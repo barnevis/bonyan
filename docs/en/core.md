@@ -2,258 +2,134 @@
 
 ## Introduction
 
-The Core is the smallest and most stable part of the architecture. The Core's responsibility is solely **coordination**, not logic implementation.
+The Core is the smallest and most stable part of Bonyan. Its sole responsibility is to make the rest of the system work together. The Core contains no business logic, provides no services, and knows nothing about the content of application data.
 
-The Core is the only part whose lifecycle is identical to the lifecycle of the entire system. The Core is always executed first and stopped last.
+The Core is the first thing to start and the last thing to shut down.
 
-The Core does not know:
-* What the product does
-* What the user interface looks like
-* In what environment it runs
-* What logic the modules and plugins contain
+The Core never stops the entire system because of a failure in one part.
 
-## Core Responsibilities
+## Responsibilities
 
-The Core has nine responsibilities and should have no more:
+### Registry
 
-1. System lifecycle management
-2. Loading and managing the lifecycle of parts
-3. Manifest and contract validation
-4. Service registry
-5. Channel management
-6. Error management
-7. Maintaining shared state
-8. Configuration management
-9. Internal logging
+The Registry holds the address of every registered service. When a plugin registers a service, the Registry stores its address. When another plugin needs that service, the Registry returns the address.
 
-## System Lifecycle
+The Registry knows where each service is. It does not know what a service does and plays no role in calling it.
 
-The Core manages the startup and shutdown sequence of the entire system.
+### Event Bus
 
-### Startup
+The Event Bus is Bonyan's one-way announcement system. A part publishes an event to inform others that something has happened. The publisher does not wait for a response and does not know who is listening.
 
-1. Initializing the Core and internal logging
-2. Reading `bootstrap.json`
-3. Checking the architecture version
-4. Loading plugins required by the Core
-5. Transferring logs from internal logging to a log plugin (if present)
-6. Identifying the execution environment
-7. Validating and loading the appropriate platform
-8. Validating and loading plugins in order
-9. Validating and loading modules
-10. Validating and loading the user interface
-11. The system is ready
+**Event Bus rules:**
 
-### Shutdown
+Events are for announcements only. A plugin announces that something happened. If a listener needs full data, it must request it from the relevant service.
 
-The shutdown sequence is the reverse of startup to ensure no part is stopped unprepared:
+A plugin sends only the event type and the minimum identifying information. Before publishing, the Core adds a unique event ID, the name of the publishing plugin, and a timestamp. This ensures the source cannot be forged and the timestamp comes from a single point.
 
-1. Stopping the UI
-2. Stopping modules
-3. Stopping plugins
-4. Stopping Core plugins
-5. Stopping the Core
+Sensitive data such as passwords, tokens, and personal information must never be published with an event.
 
-## Loading and Lifecycle Management of Parts
+A listener only reads an event and never modifies it.
 
-The Core is responsible for loading, initializing, and stopping each part independently. This responsibility is separate from system lifecycle management because each part has its own independent lifecycle.
+Event names follow the format `pluginname:eventname`. The full event structure is described in `services.md`.
 
-For each part, the Core goes through these steps:
+### Plugin Lifecycle
 
-1. Loading ← Reading the manifest and contract from the file system
-2. Validation ← Checking structure and compatibility
-3. Initialization ← Injecting configuration and registering in the registry; upon successful registration, the `core:part-loaded` message is published on the system channel
-4. Stopping ← Notifying, waiting for operations to complete, removing from the registry; after removal, the `core:part-unloaded` message is published on the system channel
+The lifecycle manages the startup and shutdown sequence of plugins. Plugins are either active or inactive. There is no intermediate state.
 
-If loading a part encounters an error, the Core ignores that part, logs the error, and continues loading the rest of the parts.
+### System Lifecycle
 
-Before initialization, the Core checks for circular dependencies among parts. If a circular dependency is detected, the Core halts initialization and reports a clear error.
+The Core is responsible for the controlled startup and shutdown of the entire system.
 
-## Internal Logging
+**Startup steps:**
 
-The Core has a simple internal logging system that is available from the moment of execution. This log has no external dependencies and only prints to the console or standard output.
+1. The Core reads the configuration file.
+2. Adapters are prepared based on the configuration.
+3. Infrastructure plugins start in the order defined in the configuration. Each infrastructure plugin announces readiness after successfully registering its service.
+4. Application plugins start in the order defined in the configuration.
+5. After all plugins have started, the `core:ready` event is published.
 
-Internal logging is used in two scenarios:
+**Shutdown steps:**
 
-* Before loading the log plugin — all Core logs are recorded via internal logging
-* When the log plugin is unavailable — the Core falls back to internal logging
+1. The `core:shutdown` event is published so all parts have a chance to prepare.
+2. Application plugins shut down in reverse startup order.
+3. Infrastructure plugins shut down in reverse startup order.
+4. The Core shuts down.
 
-Once the log plugin is loaded, the Core automatically redirects logs to the plugin.
+### Startup Validation
 
-## Manifest and Contract Validation
+Before activating any plugin, the Core reads its manifest and checks three things:
 
-Before loading any part, the Core validates its manifest and contract. This validation occurs in two stages:
+- The declared architecture version is compatible with the Core's version.
+- All required dependencies of the plugin exist in the Registry.
+- The plugin name is unique in the system.
 
-**Stage One — Structure Validation** (Before Loading):
-```text
-Do manifest.json and contract.json exist?
-Are all mandatory manifest fields present?
-Are the versions in the correct format?
-Is the part type valid?
-Is the architecture version compatible?
-Does the contract declared in "implements" exist?
-Are essential dependencies available, and do their versions match the version range declared in the manifest?
-Do "required" configurations have values?
-Are the mandatory contract fields present?
-```
+If any of these checks fail, the plugin is deactivated and the Core logs the reason. Startup of the remaining plugins continues unless the failing plugin is an infrastructure plugin.
 
-**Stage Two — Implementation Validation** (After Loading):
-```text
-Are all contract methods implemented?
-Does the signature of each method match the contract?
-```
+After successful validation, the Core gives the plugin the addresses of its declared dependencies once. From that point on, service calls are direct and the Core is not involved.
 
-If the first stage of validation fails, the part is not loaded. If the second stage of validation fails, the part is removed from the registry. In both cases, the Core logs and reports a clear error.
+### Internal Logging
 
-## Service Registry
+The Core logs its own operations. This log covers plugin startup and shutdown, the result of each plugin's validation, system errors, and unauthorized service access attempts.
 
-The Core maintains a central registry where plugins, modules, the platform, and the UI are registered. This registry is the single source of truth for recognizing active parts of the system. The Core uses the registry to manage the lifecycle of the parts.
+This log belongs to the Core. No plugin has direct access to it. If the application needs general logging, a separate plugin must be written for that purpose.
 
-```text
-Register ← A part is registered in the registry after validation
-Lookup   ← Checks if a part with this name and contract has been loaded
-Remove   ← A part is removed from the registry
-```
+### Error Structure and System Error Management
 
-The registry is solely for managing the lifecycle of the parts. Communication between parts is done exclusively through the channel. No part has direct access to the service or implementation of another part.
+The Core defines the error structure that all parts of the system must follow. Full details are in `error.md`.
 
-## Channels
+There are three types of errors:
 
-The Core manages the channels. Each part can have its own separate channel to maintain isolation and security.
+**Startup error** occurs while loading a plugin. The Core handles this: the plugin is deactivated, the `core:plugin-failed` event is published, and startup continues.
 
-In this architecture, channels transfer messages. At the channel level, the architecture does not technically distinguish between an event, request, command, or response. All of these are messages, and their meaning is defined by the message `type` and the contracts of the parts.
+**Operational error** occurs during a normal operation. The plugin handles this itself and it must not leak outside the plugin's boundary.
 
-### Channel Types
+**Critical error** completely disables a plugin. The plugin reports this to the Core. The Core deactivates the plugin, publishes the `core:plugin-crashed` event, and the system continues with degraded capability.
 
-```text
-System Channel  ← General messages that all authorized parts can hear
-Private Channel ← Private messages of each part declared in the manifest
-```
+### Internal State Management
 
-### Channel Operations
+The Core maintains a simple internal state necessary to do its job:
 
-```text
-Publish     ← A part publishes a message to a channel
-Subscribe   ← A part declares that it cares about a specific message type
-Unsubscribe ← A part declares that it no longer listens to that message type
-```
+- The list of registered plugins and the status of each (active or inactive)
+- The list of services registered in the Registry and the address of each
 
-### Basic Message Structure
+This state belongs to the Core. No plugin has direct access to it. Application state — business data — never enters the Core.
 
-Every message must have a `type`. Other fields are added depending on the message's needs. The Core or the channel completes the technical fields when the message is published.
+### Configuration
 
-```json
-{
-  "id": "msg-123",
-  "type": "task:created",
-  "source": "my-company.module.task",
-  "data": {
-    "id": "task-1"
-  },
-  "correlationId": "req-456",
-  "timestamp": "2026-06-11T12:00:00.000Z"
-}
-```
+The Core reads the project configuration file as its first startup step. This file is the only source from which the Core learns which adapters and plugins to start and in what order.
 
-* `id` is the unique identifier of the message and is generated by the channel or the Core.
-* `type` is the message type and must be defined in the related contract.
-* `source` is the name of the publishing part and is set by the channel or the Core.
-* `data` is the message payload and is optional.
-* `correlationId` is used to connect multiple messages to the same flow and is optional.
-* `timestamp` is the message publish time and is set by the channel or the Core.
+**Configuration rules from the Core's perspective:**
 
-### Channel Rules
+The Core has no hardcoded plugins or adapters. Everything comes from the configuration file.
 
-* A message can include a `data` field.
-* Small data can be transferred directly in the message.
-* Large data must be kept in a temporary storage plugin, and only its identifier (ID) should be transferred in the message.
-* Sensitive data such as passwords or tokens must not be published on the system channel.
-* The publisher does not know who receives the message.
-* The receiver does not know who published the message.
-* No part can directly access another part's channel.
-* Only the Core can create a new channel.
-* The Core does not publish, filter, or route messages from the parts. The Core's responsibility is solely to create the channels and manage part access to them. Each part publishes its messages directly into the channel it has access to.
-* An error in one listener must not prevent message delivery to other listeners.
-* Every subscription must be removed when the part stops.
+If the configuration file is missing or invalid, the Core does not start.
 
-### Matching Related Messages
+The Core follows the order defined in the configuration exactly. The developer is responsible for the correctness of that order.
 
-If a part publishes a message and expects a response or continuation, it must use `correlationId`. All messages related to that flow must include the same `correlationId`.
+Full details of the configuration file structure are in `configuration.md`.
 
-```text
-storage:get        → { correlationId: "req-1", data: { store: "tasks", key: "task-1" } }
-storage:get:result → { correlationId: "req-1", data: { value: {...} } }
-storage:get:failed → { correlationId: "req-1", data: { code: "STORAGE_NOT_FOUND" } }
-```
+## Core Boundaries
 
-Managing timeouts, missing responses, and retries is the responsibility of the part that published the original message. The channel may provide helper utilities for this, but those helpers must still use normal messages internally.
+### What the Core is
 
-### Rules for Creating a Private Channel
+The Core is a communication infrastructure. Its job is to let plugins find each other, listen to events, and have their lifecycle managed.
 
-A private channel is created only in these cases:
+### What the Core is not
 
-* The part exchanges sensitive data that must not be published on the system channel.
-* The part has high-frequency internal messages that are irrelevant to other parts.
+**The Core does not provide services.** StorageService, RouterService, NotificationService, and StateService are all provided by infrastructure plugins, not by the Core. The Core only holds their addresses.
 
-The part declares in its manifest that it requires a private channel, and the Core creates it and provides it to the part.
+**The Core has no business logic.** No rules, calculations, or application-related validation ever enter the Core.
 
-## Error Management
+**The Core is not a communication intermediary.** When a plugin gets a service address from the Registry, the call happens directly between the plugin and the service. The Core is not in between.
 
-The Core is responsible for containing errors that escape the boundary of any part.
+**The Core is not a general logger.** The Core's internal log covers only the Core's own operations. Application logging must be handled by a separate plugin.
 
-```text
-1. The error is contained within the same boundary
-2. The Core logs the error
-3. The Core notifies via the system channel
-4. The system continues operating with degraded capabilities
-```
+**The Core does not hold application state.** Business data and UI state belong to plugins, not the Core.
 
-The Core never halts the entire system due to an error in a single part.
+## Core Security
 
-The Core's error management functions are private and are not exposed to external parts via the public API. Each part is responsible for managing its own internal errors, and the Core only contains errors that escape a part's boundary.
+The Core is the first and most important line of defense in the system.
 
-## Shared State
+The Core only loads plugins that have a valid manifest. Any attempt to access a service not declared in the manifest is rejected and logged. The Core restricts each plugin's access to only the services declared in that plugin's manifest.
 
-The Core maintains data that all parts need and that does not have a specific owner.
-
-The Core's shared state is strictly for data that is truly global and independent of any business logic. Any data related to product logic must be managed within a plugin or module.
-
-Examples:
-
-```text
-UI Language
-Network connection status
-```
-
-### Shared State Rules
-
-* Only the Core can mutate the shared state
-* The shared state is not exposed to external parts via the Core's public API — state changes are only made from within the Core in response to specific messages
-* Parts can read the shared state
-* Every change in the shared state is notified via the system channel
-* The shared state must be kept to an absolute minimum
-* No business data should reside in the Core's shared state
-
-## Configuration
-
-The Core is the access point for general system settings. Configurations are read from the `bootstrap.json` file and made available to all parts.
-
-Important distinction:
-* **Product Configuration** — Settings like API addresses and public keys that do not change after startup
-* **User Settings** — Things like language and themes, which are managed in the Core's shared state or a separate plugin
-
-### Configuration Rules
-
-* No module or plugin should hardcode configurations
-* All configurations must be read from the Core
-* Product configuration does not change after system startup
-* The Core must not directly access environment variables — the environment source must be injected into the Core from the outside. This principle keeps the Core independent of the execution environment and ensures its testability
-
-## What the Core is Not
-
-To prevent the Core from bloating, the following are explicitly outside the Core's responsibilities:
-- Business logic ← Module responsibility
-- Infrastructure ← Plugin responsibility
-- Data presentation ← UI responsibility
-- Execution environment access ← Platform responsibility
-- Business data ← Plugin and module responsibility
+Full details are in `security.md`.
