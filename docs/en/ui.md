@@ -32,9 +32,9 @@ The UI layer has four responsibilities:
 
 Data in Bonyan flows in two directions:
 
-**From plugin to UI:** The plugin prepares data and makes it available to the UI. The UI displays it.
+**From service to UI:** To display data, the UI calls the relevant service directly. For example, to show a list of transactions, it calls TransactionService and renders the received data.
 
-**From UI to plugin:** The user performs an action or enters data. The UI publishes the appropriate event. The plugin listens, processes the data, and if needed makes updated data available to the UI.
+**From UI to plugin:** The user performs an action or enters data. The UI publishes the appropriate event. The plugin listens, processes the data, and if needed the service is updated. The UI can then call the service again to get the updated data.
 
 The UI never directly modifies the state of a plugin.
 
