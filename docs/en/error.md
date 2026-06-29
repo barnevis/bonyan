@@ -36,7 +36,7 @@ Occurs during a normal operation. This type of error is handled by the plugin it
 
 Common causes: invalid data, failed operation, unavailable resource.
 
-Plugin behavior: the plugin handles the error, notifies the user if needed, and execution continues. This type of error must not leave the plugin's boundary.
+Plugin behavior: the plugin handles the error. If the error occurs inside a service, the service may return a standard Bonyan error to its caller. What is not allowed is letting a raw, unprocessed error escape the plugin's boundary. Returning a standard error to a caller is not a violation of this rule.
 
 ### Critical Error
 
