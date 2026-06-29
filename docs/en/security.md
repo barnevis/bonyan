@@ -14,7 +14,7 @@ Every plugin must explicitly declare in its manifest which services it needs. Th
 
 The Core is the first and most important line of defense in the system.
 
-**At startup:** The Core validates every plugin's manifest. A plugin with an invalid manifest is not started. The Core verifies that all services declared in `dependencies` are available and gives their addresses to the plugin once. From that point on, service calls are direct and the Core is not involved.
+**At startup:** The Core validates every plugin's manifest. A plugin with an invalid manifest is not started. The Core verifies that all services declared in `dependencies` are available and passes the service object directly to the plugin. This means the plugin receives a direct reference to the service and can call its methods without any intermediary. From that point on, the Core plays no role in those calls.
 
 **Attempting to access an undeclared service:** If a plugin requests a service at runtime that it did not declare in its manifest, the request is rejected and recorded in the internal log.
 

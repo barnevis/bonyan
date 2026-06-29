@@ -65,7 +65,7 @@ Before activating any plugin, the Core reads its manifest and checks three thing
 
 If any of these checks fail, the plugin is deactivated and the Core logs the reason. Startup of the remaining plugins continues unless the failing plugin is an infrastructure plugin.
 
-After successful validation, the Core gives the plugin the addresses of its declared dependencies once. From that point on, service calls are direct and the Core is not involved.
+After successful validation, the Core passes the service object directly to the plugin. This means the plugin receives a direct reference to the service and can call its methods without any intermediary. From that point on, the Core plays no role in those service calls.
 
 ### Internal Logging
 
