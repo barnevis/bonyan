@@ -52,6 +52,10 @@ If the plugin provides a service for others to use, it must be declared here. Fo
 
 **description:** A short explanation of what the service does.
 
+**methods:** A list of the service's methods for documentation purposes. This section is optional and the Core does not use it. Its purpose is to let developers and AI models understand exactly what methods a service has, what it accepts, what it returns, and what errors it may produce — without reading the code.
+
+For each method, the following can be specified: name, description, parameters, return value, and possible errors.
+
 If the plugin provides no services, this section is left empty.
 
 ### Published Events
@@ -95,7 +99,53 @@ A real example of the manifest for a transactions plugin in a finance applicatio
   "provides": [
     {
       "name": "myfinance.transactions.service",
-      "description": "Access to transaction data and logic"
+      "description": "Access to transaction data and logic",
+      "methods": [
+        {
+          "name": "getAll",
+          "description": "Get all transactions",
+          "params": [],
+          "returns": "Transaction[]",
+          "errors": ["TRANSACTION_FETCH_FAILED"]
+        },
+        {
+          "name": "getById",
+          "description": "Get a specific transaction by ID",
+          "params": [
+            { "name": "id", "type": "string" }
+          ],
+          "returns": "Transaction",
+          "errors": ["TRANSACTION_NOT_FOUND"]
+        },
+        {
+          "name": "create",
+          "description": "Create a new transaction",
+          "params": [
+            { "name": "data", "type": "TransactionInput" }
+          ],
+          "returns": "Transaction",
+          "errors": ["TRANSACTION_VALIDATION_FAILED"]
+        },
+        {
+          "name": "update",
+          "description": "Update a transaction",
+          "params": [
+            { "name": "id", "type": "string" },
+            { "name": "data", "type": "TransactionInput" }
+          ],
+          "returns": "Transaction",
+          "errors": ["TRANSACTION_NOT_FOUND", "TRANSACTION_VALIDATION_FAILED"]
+        },
+        {
+          "name": "delete",
+          "description": "Delete a transaction",
+          "params": [
+            { "name": "id", "type": "string" }
+          ],
+          "returns": "boolean",
+          "errors": ["TRANSACTION_NOT_FOUND"]
+        }
+      ]
     }
   ],
   "events": [

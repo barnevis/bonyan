@@ -52,6 +52,10 @@
 
 **description:** توضیح کوتاهی درباره کار سرویس.
 
+**methods:** لیست متدهای سرویس برای مستندسازی. این بخش اختیاری است و هسته از آن استفاده نمی‌کند. هدف آن است که توسعه‌دهنده و مدل هوش مصنوعی بدون نگاه کردن به کد بفهمند سرویس دقیقاً چه متدهایی دارد، چه می‌گیرد، چه برمی‌گرداند، و چه خطاهایی ممکن است بدهد.
+
+برای هر متد می‌توان مشخص کرد: نام، توضیح، پارامترها، مقدار بازگشتی، و خطاهای ممکن.
+
 اگر افزونه هیچ سرویسی ارائه نمی‌دهد این بخش خالی می‌ماند.
 
 ### رویدادهای منتشرشده
@@ -95,7 +99,53 @@
   "provides": [
     {
       "name": "myfinance.transactions.service",
-      "description": "دسترسی به داده‌ها و منطق تراکنش‌ها"
+      "description": "دسترسی به داده‌ها و منطق تراکنش‌ها",
+      "methods": [
+        {
+          "name": "getAll",
+          "description": "دریافت همه تراکنش‌ها",
+          "params": [],
+          "returns": "Transaction[]",
+          "errors": ["TRANSACTION_FETCH_FAILED"]
+        },
+        {
+          "name": "getById",
+          "description": "دریافت یک تراکنش با شناسه",
+          "params": [
+            { "name": "id", "type": "string" }
+          ],
+          "returns": "Transaction",
+          "errors": ["TRANSACTION_NOT_FOUND"]
+        },
+        {
+          "name": "create",
+          "description": "ایجاد یک تراکنش جدید",
+          "params": [
+            { "name": "data", "type": "TransactionInput" }
+          ],
+          "returns": "Transaction",
+          "errors": ["TRANSACTION_VALIDATION_FAILED"]
+        },
+        {
+          "name": "update",
+          "description": "بروزرسانی یک تراکنش",
+          "params": [
+            { "name": "id", "type": "string" },
+            { "name": "data", "type": "TransactionInput" }
+          ],
+          "returns": "Transaction",
+          "errors": ["TRANSACTION_NOT_FOUND", "TRANSACTION_VALIDATION_FAILED"]
+        },
+        {
+          "name": "delete",
+          "description": "حذف یک تراکنش",
+          "params": [
+            { "name": "id", "type": "string" }
+          ],
+          "returns": "boolean",
+          "errors": ["TRANSACTION_NOT_FOUND"]
+        }
+      ]
     }
   ],
   "events": [

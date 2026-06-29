@@ -103,6 +103,16 @@ A plugin publishes an event. Events a plugin publishes must be declared in its m
 
 Any plugin may listen to any event. Listening to an event requires no special access and does not need to be declared in the manifest.
 
+## Service Boundary
+
+A common question is whether several related functions should be one service or separate services.
+
+The rule is simple: if they belong to the same thing, they are one service. If they can be used independently of each other, they are separate services.
+
+For example, the `getAll`, `getById`, `create`, `update`, and `delete` methods in a tasks plugin all relate to the same entity. So they are one service: `myapp.tasks.service`. Any plugin that has access to this service can use all of its methods.
+
+But if the same plugin also has a reminder system that other plugins might need independently of tasks, then two separate services make sense: `myapp.tasks.service` and `myapp.reminders.service`.
+
 ## Service Security
 
 The Core checks once at startup that a plugin has declared the services it needs in its manifest. Any runtime attempt to access an undeclared service is rejected and recorded in the Core's internal log.
