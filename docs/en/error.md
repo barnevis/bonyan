@@ -62,7 +62,7 @@ The Core publishes these events via the Event Bus:
 
 **`core:plugin-crashed`** when a plugin reports a critical error.
 
-Any plugin that cares about these events can listen and respond appropriately. For example, a UI plugin can listen to `core:plugin-crashed` and display a suitable message to the user.
+Any plugin that cares about these events can listen and respond appropriately. For example, the UI layer can listen to `core:plugin-crashed` and display a suitable message to the user.
 
 ## Error Management Rules
 
