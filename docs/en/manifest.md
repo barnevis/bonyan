@@ -52,9 +52,7 @@ If the plugin provides a service for others to use, it must be declared here. Fo
 
 **description:** A short explanation of what the service does.
 
-**methods:** A list of the service's methods for documentation purposes. This section is optional and the Core does not use it. Its purpose is to let developers and AI models understand exactly what methods a service has, what it accepts, what it returns, and what errors it may produce — without reading the code.
-
-For each method, the following can be specified: name, description, parameters, return value, and possible errors.
+**methods:** The list of the service's methods. This section is mandatory but the Core does not use it. Its purpose is to let developers and AI models understand exactly what methods a service has, what it accepts, what it returns, and what errors it may produce — without reading the code. For each method the following must be specified: name, description, parameters, return value, and possible errors.
 
 If the plugin provides no services, this section is left empty.
 
@@ -66,7 +64,9 @@ The events the plugin publishes via the Event Bus are declared here. For each ev
 
 **description:** A short explanation of when this event is published.
 
-This declaration lets other plugins know which events they can listen to without reading the plugin's code.
+**data:** The identifying information that comes with the event. For each field, the name and type are specified. If the event carries no data, this section is left empty.
+
+This declaration lets other plugins know which events they can listen to and what information comes with each event — without reading the code.
 
 If the plugin publishes no events, this section is left empty.
 
@@ -151,11 +151,17 @@ A real example of the manifest for a transactions plugin in a finance applicatio
   "events": [
     {
       "name": "transactions:saved",
-      "description": "Published when a new transaction is successfully saved"
+      "description": "Published when a new transaction is successfully saved",
+      "data": [
+        { "name": "transactionId", "type": "string" }
+      ]
     },
     {
       "name": "transactions:deleted",
-      "description": "Published when a transaction is deleted"
+      "description": "Published when a transaction is deleted",
+      "data": [
+        { "name": "transactionId", "type": "string" }
+      ]
     }
   ],
   "config": {
