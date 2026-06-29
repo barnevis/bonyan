@@ -46,6 +46,16 @@ Every plugin has a manifest. The manifest is the only source of truth for unders
 
 Full details of the manifest structure are in `manifest.md`.
 
+## Folder Structure
+
+Every plugin lives in its own folder. The Core expects two specific files in the root of that folder:
+
+**manifest.json:** The plugin's manifest, which the Core reads at startup.
+
+**index.js:** The plugin's entry point, from which the Core retrieves the plugin's services and registers them in the Registry.
+
+The rest of the folder's internal structure is up to the developer. Bonyan's architecture does not concern itself with what is inside the plugin.
+
 ## User Interface
 
 The user interface does not live inside a plugin. This rule has no exceptions.

@@ -16,7 +16,7 @@ The `bootstrap.json` file consists of six sections:
 
 **adapters:** Declares which implementation each adapter type should use.
 
-**plugins:** The list of plugins in startup order. Order matters and the developer is responsible for its correctness.
+**plugins:** The list of plugins in startup order. Order matters and the developer is responsible for its correctness. Each plugin has a `path` field that points to the plugin's root folder. The Core expects two specific files in that folder: `manifest.json` for the manifest and `index.js` as the entry point. The rest of the folder's internal structure is up to the developer.
 
 **config:** All configuration in one place. Each plugin's configuration is identified by the plugin name as the key. Project-wide settings also go here.
 
