@@ -28,9 +28,9 @@ An adapter is written for anything that connects to the outside world and might 
 
 These are examples, not an exhaustive list. Wherever there is a dependency on an external technology, an adapter can be written.
 
-## Relationship Between Adapter and Plugin
+## Relationship Between Adapter and Infrastructure Plugin
 
-An adapter is part of an infrastructure plugin. For example, the storage plugin uses a storage adapter and registers StorageService in the Registry. Other plugins only work with StorageService and do not know which adapter is behind it.
+An adapter is the implementation of an external technology. An infrastructure plugin hides it behind a service. For example, a storage adapter talks directly to IndexedDB or PostgreSQL, but the storage plugin uses that adapter and registers StorageService in the Registry. Other plugins only work with StorageService and do not know which adapter is behind it.
 
 ## Adapter Rules
 
