@@ -16,7 +16,7 @@ The Core is the first and most important line of defense in the system.
 
 **At startup:** The Core validates every plugin's manifest. A plugin with an invalid manifest is not started. The Core verifies that all services declared in `dependencies` are available and passes the service object directly to the plugin. This means the plugin receives a direct reference to the service and can call its methods without any intermediary. From that point on, the Core plays no role in those calls.
 
-**Attempting to access an undeclared service:** If a plugin requests a service at runtime that it did not declare in its manifest, the request is rejected and recorded in the internal log.
+**Attempting to access an undeclared service:** If a plugin requests a service during startup that it did not declare in its manifest, the Core rejects it and records it in the internal log. After startup, the Core plays no role in service calls. Access control is enforced only at startup.
 
 ## Sensitive Data
 
