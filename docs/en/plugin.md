@@ -52,30 +52,15 @@ Every plugin lives in its own folder. The Core expects two specific files in the
 
 **manifest.json:** The plugin's manifest, which the Core reads at startup.
 
-**index.js:** The plugin's entry point, from which the Core retrieves the plugin's services and registers them in the Registry.
+**index.js:** The plugin's entry point, through which the Core communicates with the plugin's implementation.
 
 The rest of the folder's internal structure is up to the developer. Bonyan's architecture does not concern itself with what is inside the plugin.
 
-## index.js Contract
+## Entry Point
 
-`index.js` exports an object with a defined structure:
+At startup, the Core gives the plugin's entry point access to three things: the services declared in the manifest's `dependencies`, the ability to publish and listen to events via the Event Bus, and the plugin's final configuration. The Core provides only these three things and nothing else. The plugin, in turn, returns to the Core the services it declared in `provides` so they can be registered in the Registry.
 
-```js
-export default {
-  start(dependencies) {
-    // The Core passes the services declared in the manifest's dependencies here
-    // The plugin returns its services
-    return {
-      'myapp.tasks.service': tasksService
-    }
-  },
-  stop() {
-    // Clean up resources
-  }
-}
-```
-
-The Core passes the declared dependencies to the `start` function. The plugin returns its services and the Core registers them in the Registry. The `stop` function is called when the plugin shuts down.
+The exact shape of this exchange — file names, function signatures, and code style — is an implementation detail and belongs in the best-practices document, not in this one.
 
 ## User Interface
 
@@ -122,6 +107,8 @@ Each plugin declares in its manifest which services it needs. Dependencies come 
 **Required dependency** means the plugin cannot function at all without this service. If the service is not available, the plugin is deactivated.
 
 **Optional dependency** means the plugin uses the service if it exists. If it does not exist, the plugin works with reduced capability.
+
+A plugin may only use services it has declared in its manifest `dependencies` and may only provide services it has declared in its manifest `provides`.
 
 ## Configuration
 
