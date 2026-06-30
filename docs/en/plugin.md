@@ -56,6 +56,27 @@ Every plugin lives in its own folder. The Core expects two specific files in the
 
 The rest of the folder's internal structure is up to the developer. Bonyan's architecture does not concern itself with what is inside the plugin.
 
+## index.js Contract
+
+`index.js` exports an object with a defined structure:
+
+```js
+export default {
+  start(dependencies) {
+    // The Core passes the services declared in the manifest's dependencies here
+    // The plugin returns its services
+    return {
+      'myapp.tasks.service': tasksService
+    }
+  },
+  stop() {
+    // Clean up resources
+  }
+}
+```
+
+The Core passes the declared dependencies to the `start` function. The plugin returns its services and the Core registers them in the Registry. The `stop` function is called when the plugin shuts down.
+
 ## User Interface
 
 The user interface does not live inside a plugin. This rule has no exceptions.

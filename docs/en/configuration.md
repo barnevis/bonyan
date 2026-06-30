@@ -8,13 +8,15 @@ This file is read only by the Core. No plugin can access it directly.
 
 ## Configuration File Structure
 
-The `bootstrap.json` file consists of six sections:
+The `bootstrap.json` file consists of seven sections:
 
 **architecture:** The Bonyan architecture version this project is built on.
 
 **core:** The name and version of the Core the project uses.
 
 **adapters:** Declares which implementation each adapter type should use.
+
+**ui:** The path to the UI folder. The Core reads the UI manifest and entry point from this path.
 
 **plugins:** The list of plugins in startup order. Order matters and the developer is responsible for its correctness. Each plugin has a `path` field that points to the plugin's root folder. The Core expects two specific files in that folder: `manifest.json` for the manifest and `index.js` as the entry point. The rest of the folder's internal structure is up to the developer.
 
@@ -35,6 +37,9 @@ The `bootstrap.json` file consists of six sections:
     "storage": "IndexedDBAdapter",
     "auth": "LocalAuthAdapter",
     "notification": "BrowserNotificationAdapter"
+  },
+  "ui": {
+    "path": "./ui"
   },
   "plugins": [
     {
