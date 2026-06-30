@@ -39,7 +39,11 @@ Examples:
 
 ## Event Naming
 
-Events follow this format:
+In Bonyan there are two types of events that must be distinguished from each other.
+
+### Domain Event
+
+An event published by a plugin to announce that something has happened in the system. These events are written in the past tense and follow this format:
 
 ```
 pluginname:eventname
@@ -57,6 +61,21 @@ Examples:
 - `core:plugin-failed`
 - `core:plugin-crashed`
 
+### UI Action Event
+
+An event published by the UI layer to announce that the user has made a request. These events start with the `ui:` prefix and use a noun form for the action:
+
+```
+ui:action-requested
+```
+
+Examples:
+- `ui:save-transaction-requested`
+- `ui:delete-account-requested`
+- `ui:filter-changed`
+
+The key difference is that a domain event says "this happened" and a UI action event says "the user wants this". A plugin listens to a UI action event, processes it, and at the end publishes a domain event.
+
 ## General Naming Rules
 
 **Lowercase and hyphens.** All names are written in lowercase. If a name has multiple words, hyphens are used. Example: `myfinance.budget-reports`.
@@ -65,4 +84,6 @@ Examples:
 
 **Abbreviations are not allowed.** `transactions` is correct, `txn` is not. Readability matters more than brevity.
 
-**Event names are in the past tense.** An event is something that has already happened. `saved` is correct, `save` is not. The exception is Core events that start with `core:`.
+**Domain events are in the past tense.** A domain event is something that has already happened. `saved` is correct, `save` is not. The exception is Core events that start with `core:`.
+
+**UI action events start with `ui:`.** All events published by the UI layer start with `ui:` and end with `-requested` or `-changed`.
