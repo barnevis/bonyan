@@ -63,18 +63,18 @@ Examples:
 
 ### UI Action Event
 
-An event published by the UI layer to announce that the user has requested something or made a lightweight change in the UI. These events start with the `ui:` prefix and use a noun form for the action:
+An event published by the UI layer to announce that the user has made a lightweight change in the UI, such as changing a filter or opening a panel. This event is not a substitute for a direct service call and is never used to trigger core product logic such as saving or deleting; those operations always go through a direct service call. These events start with the `ui:` prefix and use a noun form for the action:
 
 ```
 ui:action-requested
 ```
 
 Examples:
-- `ui:save-transaction-requested`
-- `ui:delete-account-requested`
 - `ui:filter-changed`
+- `ui:panel-opened`
+- `ui:view-mode-changed`
 
-The key difference is that a domain event says "this happened" and a UI action event says "the user wants this". A plugin listens to a UI action event, processes it, and at the end publishes a domain event.
+The key difference is that a domain event says "this happened" and a UI action event says "a lightweight UI request or state change has occurred". A UI action event never replaces a direct service call for a core product operation.
 
 Like domain events, UI action events carry only identifying data, not the full payload, and must never carry sensitive data such as passwords or tokens.
 
@@ -88,4 +88,4 @@ Like domain events, UI action events carry only identifying data, not the full p
 
 **Domain events are in the past tense.** A domain event is something that has already happened. `saved` is correct, `save` is not. The exception is Core events that start with `core:`.
 
-**UI action events start with `ui:`.** All events published by the UI layer start with `ui:` and end with `-requested` or `-changed`.
+**UI action events start with `ui:`.** All events published by the UI layer start with `ui:` and end with `-changed`, `-opened`, or similar patterns that describe a UI state change, not the execution of a core product operation.
