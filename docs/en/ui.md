@@ -4,13 +4,13 @@
 
 The UI layer is responsible for displaying data to the user and receiving interaction from them. The UI has no knowledge of product logic, business rules, or infrastructure. This separation ensures that changes to the appearance or technology of the UI do not affect product logic, and the UI can be replaced without modifying any plugin.
 
-The UI is not a plugin but, like plugins, it has a manifest that the Core reads at startup.
+The UI is not a plugin but, like plugins, it has a manifest and an entry point that the Core reads at startup.
 
 ## UI Manifest
 
 The UI manifest is part of Bonyan's architecture because it defines the UI's access boundary. The Core grants access only to the services declared in the UI manifest and provides nothing else to the UI.
 
-The UI manifest declares which services the UI needs and which events it publishes. Its structure is similar to a plugin manifest but lighter:
+The UI manifest declares which services the UI needs and which events it publishes. Events declared here must be lightweight and limited to UI-level changes, not core product operations. Its structure is similar to a plugin manifest but lighter:
 
 ```json
 {
@@ -27,17 +27,17 @@ The UI manifest declares which services the UI needs and which events it publish
   },
   "events": [
     {
-      "name": "ui:save-transaction-requested",
-      "description": "The user has requested to save a transaction",
-      "data": [
-        { "name": "requestId", "type": "string" }
-      ]
-    },
-    {
       "name": "ui:filter-changed",
       "description": "The user has changed the display filter",
       "data": [
         { "name": "filterId", "type": "string" }
+      ]
+    },
+    {
+      "name": "ui:panel-opened",
+      "description": "The user has opened a panel",
+      "data": [
+        { "name": "panelId", "type": "string" }
       ]
     }
   ]
@@ -46,15 +46,17 @@ The UI manifest declares which services the UI needs and which events it publish
 
 The UI manifest has no `provides` section because the UI does not provide services. It has no `type` section because it is not a plugin.
 
-## Entry Point
+## Manifest and Entry Point
 
-At startup, the Core gives the UI's entry point access to the same three things it gives plugins: the services declared in the UI manifest's `dependencies`, the ability to publish and listen to events via the Event Bus, and the UI's final configuration.
+Like plugins, the UI has a manifest and an entry point. At startup, the Core gives the UI's entry point the same three things it gives plugins: the services declared in the UI manifest's `dependencies`, the ability to publish and listen to events via the Event Bus, and the UI's final configuration.
 
-The exact shape of this exchange, including file names and function signatures, is an implementation detail and belongs in the best-practices document, not in this one.
+The exact file names, folder structure, and function signatures are implementation details and belong in the best-practices document, not in this one.
+
+When the UI publishes an event, the `source` field is taken from the UI's name in its manifest — a value like `myapp.ui` — not from anything determined at runtime.
 
 ## The Primary User Action Path
 
-This path defines exactly how data and control flow between the UI, a service, and a plugin when the user performs an action.
+This path defines exactly how data and control flow between the UI, a service, and a plugin when the user performs an action. This primary path always goes through a direct service call, not the Event Bus.
 
 **For reading data:** The UI calls the service declared in its manifest directly and retrieves data for display.
 
@@ -62,7 +64,7 @@ This path defines exactly how data and control flow between the UI, a service, a
 
 **After the operation completes:** The plugin that provides the service publishes a domain event once the operation succeeds, so the UI or other parts can learn about the change. Publishing the domain event is the plugin's responsibility, not the UI's.
 
-**When a UI action event is used:** A UI action event is only for announcing lightweight UI changes or requests, such as a filter change or the opening of a form. It is not a substitute for calling a service directly and is not used to transfer a complete form payload or to trigger core logic.
+**What role the Event Bus plays here:** The Event Bus is for coordination and notification, not the primary path for executing a user operation. Operations such as saving or deleting always go through a direct service call. A UI action event is only used to announce lightweight UI changes, such as a filter change or a panel being opened. It is not a substitute for calling a service directly and is never used to transfer a complete form payload or to trigger core logic.
 
 ## UI Responsibilities
 
@@ -74,7 +76,7 @@ The UI layer has four responsibilities:
 
 **Receiving data from the user:** Collects data the user enters and sends it directly to the relevant service.
 
-**Publishing UI action events:** To announce lightweight UI changes or requests, the UI publishes the appropriate event with the `ui:` prefix. Like every event in Bonyan, this event carries only identifying data — never a full payload and never sensitive data. If an event carries an identifier, the full data associated with that identifier must already be stored in a declared service so the listener can retrieve it.
+**Publishing UI action events:** Only to announce lightweight UI changes, the UI publishes the appropriate event with the `ui:` prefix. Like every event in Bonyan, this event carries only identifying data — never a full payload and never sensitive data. The full payload must always be transferred through a direct service call, not through an event.
 
 ## What the UI Is Not
 
@@ -82,7 +84,7 @@ The UI layer has four responsibilities:
 
 **The UI does not own product data.** Data belongs to product plugins.
 
-**The UI does not decide on product rules or what data is valid.** What data is valid, what rules govern it, and what should be displayed are decisions the product plugin makes.
+**The UI does not decide what data is valid.** The product plugin decides what data is valid and presentable. The UI decides how that data is displayed.
 
 **The UI is not responsible for infrastructure.** Storage, routing, and other base services do not belong to the UI layer.
 
