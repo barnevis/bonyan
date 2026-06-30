@@ -6,7 +6,7 @@
 [![نسخه](https://img.shields.io/badge/version-0.6-blue.svg)](package.json)
 [![مجوز](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-> این معماری با کمک مدل هوش مصنوعی Claude Sonnet 4.6 نوشته شده است.
+> این معماری با کمک مدل هوش مصنوعی Claude Sonnet 4.6 و بخش کنش‌ور وبگاه [arena](https://arena.ai) نوشته شده است.
 
 ## چیست؟
 
