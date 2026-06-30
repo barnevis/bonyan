@@ -63,7 +63,7 @@ Examples:
 
 ### UI Action Event
 
-An event published by the UI layer to announce that the user has made a request. These events start with the `ui:` prefix and use a noun form for the action:
+An event published by the UI layer to announce that the user has requested something or made a lightweight change in the UI. These events start with the `ui:` prefix and use a noun form for the action:
 
 ```
 ui:action-requested
@@ -75,6 +75,8 @@ Examples:
 - `ui:filter-changed`
 
 The key difference is that a domain event says "this happened" and a UI action event says "the user wants this". A plugin listens to a UI action event, processes it, and at the end publishes a domain event.
+
+Like domain events, UI action events carry only identifying data, not the full payload, and must never carry sensitive data such as passwords or tokens.
 
 ## General Naming Rules
 
