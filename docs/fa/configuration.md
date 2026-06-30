@@ -1,30 +1,30 @@
-# پیکربندی (Configuration)
+# Configuration
 
-## مقدمه
+## Introduction
 
-هر پروژه‌ای که از بنیان استفاده می‌کند یک فایل پیکربندی مرکزی به نام `bootstrap.json` دارد. این فایل تنها جایی است که مشخص می‌شود اپلیکیشن از چه آداپتورها و افزونه‌هایی تشکیل شده. هسته این فایل را در اولین گام راه‌اندازی می‌خواند و بر اساس آن عمل می‌کند.
+Every project that uses Bonyan has a central configuration file named `bootstrap.json`. This file is the only place where the application's adapters and plugins are declared. The Core reads this file as its first startup step and acts on it.
 
-این فایل فقط توسط هسته خوانده می‌شود. هیچ افزونه‌ای نمی‌تواند مستقیماً به آن دسترسی داشته باشد.
+This file is read only by the Core. No plugin can access it directly.
 
-## ساختار فایل پیکربندی
+## Configuration File Structure
 
-فایل `bootstrap.json` از هفت بخش تشکیل شده است:
+The `bootstrap.json` file consists of seven sections:
 
-**architecture:** نسخه معماری بنیان که این پروژه بر اساس آن ساخته شده.
+**architecture:** The Bonyan architecture version this project is built on.
 
-**core:** نام و نسخه هسته‌ای که پروژه استفاده می‌کند.
+**core:** The name and version of the Core the project uses.
 
-**adapters:** مشخص می‌کند هر نوع آداپتور کدام پیاده‌سازی را استفاده کند.
+**adapters:** Declares which implementation each adapter type should use.
 
-**ui:** مسیر پوشه رابط کاربری. هسته از این مسیر مانیفست و نقطه ورود UI را می‌خواند.
+**ui:** The path to the UI folder. The Core reads the UI manifest and entry point from this path.
 
-**plugins:** لیست افزونه‌ها به ترتیب راه‌اندازی. ترتیب اهمیت دارد و توسعه‌دهنده مسئول صحت آن است. هر افزونه یک فیلد `path` دارد که به پوشه ریشه افزونه اشاره می‌کند. هسته انتظار دارد در آن پوشه دو فایل مشخص وجود داشته باشد: `manifest.json` برای مانیفست و `index.js` به عنوان نقطه ورود. بقیه ساختار داخلی پوشه به توسعه‌دهنده است.
+**plugins:** The list of plugins in startup order. Order matters and the developer is responsible for its correctness. Each plugin has a `path` field that points to the plugin's root folder. The Core expects two specific files in that folder: `manifest.json` for the manifest and `index.js` as the entry point. The rest of the folder's internal structure is up to the developer.
 
-**config:** همه پیکربندی‌ها در یک جا. پیکربندی هر افزونه با نام افزونه به عنوان کلید مشخص می‌شود. تنظیمات کلی پروژه هم اینجا قرار می‌گیرند.
+**config:** All configuration in one place. Each plugin's configuration is identified by the plugin name as the key. Project-wide settings also go here.
 
-**app:** اطلاعات پروژه مثل نام و نسخه.
+**app:** Project information such as name and version.
 
-## نمونه فایل پیکربندی
+## Configuration File Example
 
 ```json
 {
@@ -83,8 +83,8 @@
     "my-company.settings": {
       "theme": "dark"
     },
-    "defaultLanguage": "fa",
-    "timezone": "Asia/Tehran"
+    "defaultLanguage": "en",
+    "timezone": "UTC"
   },
   "app": {
     "name": "My Finance App",
@@ -93,11 +93,11 @@
 }
 ```
 
-## متغیرهای محیطی
+## Environment Variables
 
-مقادیر حساس مثل کلید API، رمز پایگاه داده، و توکن‌های سرویس نباید در `bootstrap.json` به صورت متن ساده ذخیره شوند. این مقادیر باید از طریق متغیرهای محیطی تأمین شوند.
+Sensitive values such as API keys, database passwords, and service tokens must not be stored as plain text in `bootstrap.json`. These values must be supplied through environment variables.
 
-برای استفاده از متغیر محیطی در `bootstrap.json`، از قالب `${ENV_VAR_NAME}` استفاده می‌شود:
+To use an environment variable in `bootstrap.json`, use the `${ENV_VAR_NAME}` format:
 
 ```json
 {
@@ -110,11 +110,11 @@
 }
 ```
 
-هسته در زمان راه‌اندازی این مقادیر را از محیط اجرا می‌خواند و جایگزین می‌کند.
+The Core reads these values from the runtime environment at startup and substitutes them.
 
-**نوع داده:** همه مقادیر جایگزین‌شده به صورت رشته هستند. هسته نوع داده را حفظ نمی‌کند. هر افزونه مسئول تبدیل مقادیر پیکربندی به نوع مورد نیاز خود است.
+**Data type:** All substituted values are strings. The Core does not preserve data types. Each plugin is responsible for converting configuration values to the type it needs.
 
-**متغیر اجباری:** اگر متغیر محیطی اجباری در محیط اجرا تعریف نشده باشد، هسته راه‌اندازی را متوقف می‌کند و خطای واضحی اعلام می‌کند:
+**Required variable:** If a required environment variable is not defined in the runtime environment, the Core stops startup and reports a clear error:
 
 ```json
 {
@@ -129,20 +129,20 @@
 }
 ```
 
-## قوانین پیکربندی
+## Configuration Rules
 
-**یک فایل پیکربندی.** هر پروژه فقط یک فایل `bootstrap.json` دارد.
+**One configuration file.** Every project has exactly one `bootstrap.json`.
 
-**فقط هسته می‌خواند.** این فایل فقط توسط هسته خوانده می‌شود. هیچ افزونه‌ای نمی‌تواند مستقیماً به آن دسترسی داشته باشد.
+**Only the Core reads it.** This file is read only by the Core. No plugin can access it directly. The Core extracts the final configuration for each plugin and the UI from this file and gives it to that plugin or the UI at startup.
 
-**ترتیب اهمیت دارد.** ترتیب افزونه‌ها در فهرست `plugins`، ترتیب بارگذاری آنهاست. توسعه‌دهنده مسئول صحت این ترتیب است.
+**Order matters.** The order of plugins in the `plugins` list is the order they are loaded. The developer is responsible for the correctness of this order.
 
-**اگر نیست، بارگذاری نمی‌شود.** اگر افزونه‌ای در فهرست نباشد، هسته آن را بارگذاری نمی‌کند.
+**If it is not listed, it is not loaded.** If a plugin is not in the list, the Core will not load it.
 
-**پیکربندی افزونه بر پیش‌فرض مانیفست اولویت دارد.** مقادیر `config` تعریف‌شده در این فایل جایگزین مقادیر پیش‌فرض مانیفست افزونه می‌شوند.
+**Plugin config overrides manifest defaults.** Values defined in `config` replace the default values declared in the plugin's manifest.
 
-**پیکربندی پس از راه‌اندازی تغییر نمی‌کند.** فایل پیکربندی در زمان راه‌اندازی خوانده می‌شود و تا خاموش‌شدن سیستم ثابت می‌ماند.
+**Configuration does not change after startup.** The configuration file is read at startup and remains fixed until the system shuts down.
 
-**وابستگی اختیاری خطا نیست.** وابستگی‌های اختیاری در زمان راه‌اندازی بررسی می‌شوند اما نبودشان باعث توقف راه‌اندازی نمی‌شود.
+**Optional dependencies are not errors.** Optional dependencies are checked at startup but their absence does not stop the startup process.
 
-**مقادیر حساس در متغیر محیطی.** کلیدهای API، رمزها، و توکن‌ها نباید به صورت متن ساده در این فایل باشند.
+**Sensitive values belong in environment variables.** API keys, passwords, and tokens must not appear as plain text in this file.
