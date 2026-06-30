@@ -44,11 +44,11 @@ When a plugin is deactivated, its services are removed from the Registry. Plugin
 
 These two communication mechanisms must not be confused. The boundary between them is precise:
 
-**Service** is used when a plugin needs something and expects a response. Example: the reports plugin asks TransactionService for the total transactions of this month.
+**Service** is used when a plugin or the UI needs something and expects a response. Example: the reports plugin asks TransactionService for the total transactions of this month, or the UI calls TransactionService directly to save a new transaction.
 
-**Event Bus** is used when a plugin announces that something happened and does not wait for a response. Example: the transactions plugin announces that a new transaction was saved.
+**Event Bus** is used when a plugin announces that something happened and does not wait for a response. Example: after TransactionService successfully saves a transaction, the transactions plugin publishes the domain event `transactions:saved` so others can learn about the change.
 
-If a response is needed, use a service. If it is just a notification, use the Event Bus.
+If a response is needed, use a service. If it is just a notification, use the Event Bus. The primary path for executing an operation always goes through a direct service call; the Event Bus is used only for coordination and notification after the operation completes, not for executing the operation itself.
 
 ## Event Bus
 
